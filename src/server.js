@@ -1,30 +1,18 @@
 import express from "express";
-import { mapOrder } from "~/utils/sorts.js";
+import mongoose from "mongoose";
+//import { mapOrder } from "~/utils/sorts.js";
 
 const app = express();
 
 const hostname = "localhost";
 const port = 8017;
 
-app.get("/", (req, res) => {
-  // Test Absolute import mapOrder
-  console.log(
-    mapOrder(
-      [
-        { id: "id-1", name: "One" },
-        { id: "id-2", name: "Two" },
-        { id: "id-3", name: "Three" },
-        { id: "id-4", name: "Four" },
-        { id: "id-5", name: "Five" },
-      ],
-      ["id-5", "id-4", "id-2", "id-3", "id-1"],
-      "id"
-    )
-  );
-  res.end("<h1>Hello World!</h1><hr>");
-});
+await mongoose.connect('mongodb://localhost:27017/ChamSocSucKhoe')
+  .then(() => { app.listen(port, () => console.log("DB connected!!!!!")) })
+  .catch(() => console.log("DB connect failed!!!!"))
+
 
 app.listen(port, hostname, () => {
   // eslint-disable-next-line no-console
-  console.log(`Hello Truong Nguyen , I am running at ${hostname}:${port}/`);
+  console.log(`server is running at ${hostname}:${port}/`);
 });
