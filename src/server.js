@@ -1,18 +1,25 @@
-import express from "express";
-import mongoose from "mongoose";
-//import { mapOrder } from "~/utils/sorts.js";
+const express = require("express");
 
+const mongoose = require("mongoose");
+
+
+require('dotenv').config();
 const app = express();
 
-const hostname = "localhost";
-const port = 8017;
+const port = process.env.APP_PORT;
 
-await mongoose.connect('mongodb://localhost:27017/ChamSocSucKhoe')
-  .then(() => { app.listen(port, () => console.log("DB connected!!!!!")) })
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }));
+
+mongoose.connect('mongodb://localhost:27017/ChamSocSucKhoe')
+  .then(() => { console.log("DB connected!!!!!") })
   .catch(() => console.log("DB connect failed!!!!"))
 
 
-app.listen(port, hostname, () => {
+var authRoute = require('./routes/auth');
+app.use('/api', authRoute);
+
+app.listen(port, process.env.APP_HOST, () => {
   // eslint-disable-next-line no-console
-  console.log(`server is running at ${hostname}:${port}/`);
+  console.log(`server is running at ${process.env.APP_HOST}:${port}`);
 });

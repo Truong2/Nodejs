@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const Calendar = new mongoose.Schema({
-    Calendar_Id: {
+    _id: {
         type: Number
     },
     Calendar_userName: {

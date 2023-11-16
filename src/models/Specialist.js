@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const Specialist = new mongoose.Schema({
-    Specialist_ID: {
+    _id: {
         type: Number
     },
     Specialist_hosId: {
@@ -15,7 +15,6 @@ const Specialist = new mongoose.Schema({
     Specialist_createAt: {
         type: Date
     }
-
 });
 
 module.exports = mongoose.model("Specialist", Specialist);

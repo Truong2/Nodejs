@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const Service = new mongoose.Schema({
-    Hos_serviceID: {
+    _id: {
         type: Number
     },
     Hos_service_cost: {
@@ -15,7 +15,7 @@ const Service = new mongoose.Schema({
     HosId: {
         type: Number
     },
-    Speecialist_ID: {
+    SpeecialisID: {
         type: Number
     },
     Hos_serviceReview: {

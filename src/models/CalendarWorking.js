@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const CalendarWorking = new mongoose.Schema({
-    carlendarWorking_ID: {
+    _id: {
         type: Number
     },
     carlendarWorking_userID: {

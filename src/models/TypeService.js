@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const TypeService = new mongoose.Schema({
-    serviceID: {
+    _id: {
         type: Number,
         require: true,
     },
