@@ -71,7 +71,9 @@ const Employee = new mongoose.Schema({
         type: Date
     },
     hopitalID: {
-        type: mongoose.Schema.Types.ObjectId,
+        //type: mongoose.Schema.Types.ObjectId,
+
+        type: Number,
         ref: 'Hospital',
         requrie: true
     },
@@ -83,6 +85,12 @@ const Employee = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "CalendarWorking"
     }],
+    role: {
+        type: mongoose.Schema.Types.ObjectId,
+        // type: Number,
+        ref: 'Role',
+
+    },
     CreateAt: {
         type: Date
     },

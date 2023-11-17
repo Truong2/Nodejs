@@ -20,5 +20,5 @@ const role = new mongoose.Schema({
     role_receptionist: {
         type: Number
     }
-
-})
+});
+module.exports = mongoose.model("Role", role);
