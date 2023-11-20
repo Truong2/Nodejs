@@ -42,6 +42,10 @@ const Hospital = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employee',
     }],
+    role: {
+        type: Number,
+        ref: "Role"
+    },
     CreateAt: {
         type: Date
     },

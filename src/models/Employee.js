@@ -86,8 +86,8 @@ const Employee = new mongoose.Schema({
         ref: "CalendarWorking"
     }],
     role: {
-        type: mongoose.Schema.Types.ObjectId,
-        // type: Number,
+        // type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: 'Role',
 
     },

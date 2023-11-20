@@ -6,19 +6,32 @@ const role = new mongoose.Schema({
         require: true
     },
     user_id: {
-        type: Number
+        type: Number,
+        required: true
     },
-    role_doctor: {
-        type: Number
+    account_type: {
+        type: Number,
+        required: true
     },
-    role_hospital: {
-        type: Number
+    role_admin: {
+        type: Number,
+        default: 0
     },
-    role_customer: {
-        type: Number
+    role_doctor: {// bác sĩ 
+        type: Number,
+        default: 0
     },
-    role_receptionist: {
-        type: Number
+    role_hospital: {//cơ sở y tế 
+        type: Number,
+        default: 0
+    },
+    role_customer: {// khách hàng 
+        type: Number,
+        default: 0
+    },
+    role_receptionist: {//lễ tân 
+        type: Number,
+        default: 0
     }
 });
 module.exports = mongoose.model("Role", role);
