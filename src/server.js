@@ -11,7 +11,7 @@ const port = process.env.APP_PORT;
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://localhost:27017/ChamSocSucKhoe')
+mongoose.connect('mongodb+srv://chamsocsuckhoe:cssk123@chamsocsuckhoe.evqmxbw.mongodb.net/cham_soc_suc_khoe?retryWrites=true&w=majority')
   .then(() => { console.log("DB connected!!!!!") })
   .catch(() => console.log("DB connect failed!!!!"))
 
