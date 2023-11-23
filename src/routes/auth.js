@@ -7,4 +7,7 @@ const func = require("../services/function");
 router.post('/register', formdata.parse(), Auth.Register);
 router.post('/login', formdata.parse(), Auth.login);
 router.post('/info_person', formdata.parse(), func.checkToken, Auth.getInfoPerson);
+
+router.post('/forgotPassword', formdata.parse(), Auth.Register);
+router.patch('/resetPassword/::token', formdata.parse(), Auth.resetToken);
 module.exports = router;

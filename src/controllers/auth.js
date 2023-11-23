@@ -4,7 +4,10 @@ const Customer = require("../models/Customer");
 const Admin = require("../models//admin");
 const Role = require("../models/role");
 const func = require("../services/function");
-
+const nodemailer = require("nodemailer");
+const bcrypt = require('bcryptjs');
+const crypto = require("crypto");
+const next = require('../utils/next');
 exports.Register = async (req, res) => {
     try {
 
@@ -18,6 +21,7 @@ exports.Register = async (req, res) => {
             userGender,//1-nam ,2-nữ
             hopitalID
         } = req.body;
+        userPassword = await bcrypt.hash(userPassword, 10);
 
 
         if (!userType || !userEmail || !userPassword) {
@@ -194,17 +198,23 @@ exports.login = async (req, res) => {
             res.status(404).json({ message: "input is not valid" });
             return;
         }
+
+
         //find by email and password
         //0-admin1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng 
         if (userType == 0) {
             let findUser = await Admin.findOne({
                 Admin_email: email.toLowerCase(),
-                Admin_password: password,
+                // Admin_password: password,
             })
             if (!findUser) {
-                return res.status(400).json({ message: "email or password is not correct" });
-
+                return res.status(400).json({ message: "email  is not correct" });
             }
+            let check_password = await bcrypt.compare(password, findUser.Admin_password)
+            if (!check_password) {
+                return res.status(404).json({ message: "password is not valid" });
+            }
+
             let data = {
                 _id: findUser._id,
                 name: findUser.Admin_name,
@@ -214,11 +224,7 @@ exports.login = async (req, res) => {
             }
 
             let token = await func.createToken(data, '7d');
-
-
             let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
-
-
             res.status(200).json({ data: { token: token, role: role }, message: " employee login sucess" });
         }
         else if (userType == 1 || userType == 2) {
@@ -288,9 +294,10 @@ exports.login = async (req, res) => {
             })
 
             if (!findUser) {
-                res.status(400).json({ message: "email or password is not correct" });
-                return;
+                return res.status(400).json({ message: "email or password is not correct" });
+
             }
+            let role = await Role.findOne({ user_id: findUser._id, account_type: 4 });
             let data = {
                 _id: findUser._id,
                 name: findUser.Customer_name,
@@ -300,12 +307,9 @@ exports.login = async (req, res) => {
                 address: findUser.Custome_address,
                 //  birthday: findUser.employeeBirthday,
                 gender: findUser.Custome_gender,
-                // roleId: findUser.roleId,
+                role: role
             }
             let token = await func.createToken(data, '7d');
-
-            let role = await Role.findOne({ user_id: findUser._id, account_type: 4 });
-
             res.status(200).json({ data: { token: token, role: role }, message: " custommeer login sucess" });
         }
 
@@ -319,6 +323,7 @@ exports.login = async (req, res) => {
 exports.getInfoPerson = async (req, res) => {
     let { _id, accountType } = req.user.data;
     try {
+
 
         if (accountType == 0) {
             let info = await Admin.findOne({ _id: _id });
@@ -354,6 +359,55 @@ exports.getInfoPerson = async (req, res) => {
             return res.status(500).json({ message: err.message })
         }
     }
+}
 
+exports.resetToken = async (user) => {
+    try {
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        const resetUrl = `${req.protocol}:://${req.get("host")}/api/v1/user/resetPassword/${resetToken} `
+        const message = `We have received a password request.Please use the below link to reset your password\n\n ${resetUrl}\n\nThis reset password link be valid only 10 minutes.`
+
+        await next.sendEmail({
+            email: user.email,
+            subject: "password change request received",
+            message: message
+        })
+
+    } catch (err) {
+
+
+    }
+
+
+
+
+}
+
+
+exports.forgotPassword = async (req, res) => {
+    let { email, typeAcc } = req.body;
+
+    let user = {}
+    if (typeAcc == 0) {
+        user = await Admin.findOne({ Admin_email: email });
+    }
+    if (typeAcc == 1 || typeAcc == 2) {
+        user = await Employee.findOne({ employeeEmail: email });
+    }
+    if (typeAcc == 3) {
+        user = await Hospital.findOne({ hospitalEmail: email });
+    }
+    if (typeAcc == 4) {
+        user = await Customer.findOne({ Customer_email: email });
+    }
+    else {
+        return res.status(400).send("type Account is not valid");
+    }
+
+
+}
+exports.passwordReset = (req, res) => {
 
 }
