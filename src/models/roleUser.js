@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const roleUserShema = new mongoose.Schema({
     _id: {
         type: Number,
@@ -10,7 +10,7 @@ const roleUserShema = new mongoose.Schema({
     },
     codeRole: {
         type: String,
-        required
+        required: true
     }
 })
 module.exports = mongoose.model("RoleUser", roleUserShema);
