@@ -1,6 +1,7 @@
 const Employee = require("../models/Employee");
 const Hospital = require("../models/Hospital");
 const Customer = require("../models/Customer");
+new RoleUser = require('../models/roleUser');
 const Admin = require("../models//admin");
 const Role = require("../models/role");
 const func = require("../services/function");
@@ -8,6 +9,9 @@ const nodemailer = require("nodemailer");
 const bcrypt = require('bcryptjs');
 const crypto = require("crypto");
 const next = require('../utils/next');
+const { rejects } = require("assert");
+const hbs = require('nodemailer-express-handlebars')
+require("dotenv").config()
 exports.Register = async (req, res) => {
     try {
 
@@ -186,7 +190,6 @@ exports.Register = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
-
 exports.login = async (req, res) => {
     try {
         let {
@@ -319,10 +322,10 @@ exports.login = async (req, res) => {
     }
 }
 
-
 exports.getInfoPerson = async (req, res) => {
     let { _id, accountType } = req.user.data;
     try {
+        console.log(_id)
 
 
         if (accountType == 0) {
@@ -361,53 +364,117 @@ exports.getInfoPerson = async (req, res) => {
     }
 }
 
-exports.resetToken = async (user) => {
-    try {
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        crypto.createHash('sha256').update(resetToken).digest('hex');
+exports.forgotPassword = async (req, res) => {
+    //let { email, typeAcc } = req.body;
+    let superior = req.user.data._id;
+    console.log(superior)
+    //  let { superior, inferior, role_account ,accountType} = req.body;
+    return res.status(500).json({ data: superior, message: "ok" })
 
+    try {
+        let user = {}
+        if (typeAcc == 0) {
+            user = await Admin.findOne({ Admin_email: email });
+        }
+        else if (typeAcc == 1 || typeAcc == 2) {
+            user = await Employee.findOne({ employeeEmail: email });
+        }
+        else if (typeAcc == 3) {
+            user = await Hospital.findOne({ hospitalEmail: email });
+        }
+        else if (typeAcc == 4) {
+            user = await Customer.json({ Customer_email: email });
+        }
+        else {
+            return res.status(400).send({ message: "type Account is not valid" });
+        }
+        if (!user) {
+            return res.status(404).json({ meessage: "can not find the user in databases" });
+        }
+        resetToken = ""
         const resetUrl = `${req.protocol}:://${req.get("host")}/api/v1/user/resetPassword/${resetToken} `
         const message = `We have received a password request.Please use the below link to reset your password\n\n ${resetUrl}\n\nThis reset password link be valid only 10 minutes.`
-
-        await next.sendEmail({
-            email: user.email,
-            subject: "password change request received",
-            message: message
-        })
-
+        var transporter = nodemailer.createTransport(
+            {
+                service: 'gmail',
+                auth: {
+                    user: 'tinh.nv1610@gmail.com',
+                    pass: 'tinh16102001'
+                }
+            }
+        );
+        // use a template file with nodemailer
+        const mailOptions = {
+            from: 'tinh.nv1610@gmail.com', // sender address
+            template: "email", // the name of the template file, i.e., email.handlebars
+            to: email,
+            subject: "Welcome to My Company,",
+            context: {
+                name: "tinh",
+                company: 'my company'
+            },
+        };
+        try {
+            await transporter.sendMail(mailOptions)
+                .then((data) => { console.log('Mail sent', data) })
+                .catch(err => { console.log('Failure', err) })
+            return res.status(200).json({ message: "success" });
+        } catch (error) {
+            console.log(error);
+        }
     } catch (err) {
-
-
+        console.log(err)
+        return res.status(500).json({ message: err.message })
     }
-
-
-
-
 }
 
+exports.decentralization = async (req, res) => {
+    try {
+        // let { _id, accountType } = req.user.data;
+        let superior = req.user.data._id;
+        let accountType = req.user.data.accountType;
+         let {  inferior, role_accounts } = req.body;
+        if (accountType > 4 || accountType <0){
+            return res.status(400).json({ data: superior, message: "accountType is not valid" });
+        }
+        let check_user = true;
+        if (accountType == 0) {
+            check_user = await Admin.exists({ _id: superior });
+            check_user = await Admin.exists({ _id: inferior });
+           
+        } else if (accountType == 1 || accountType == 2) {
+            check_user = await Employee.exists({ _id: superior });
+            check_user = await Employee.exists({ _id: inferior });
+        } else if (accountType == 3) {
+            check_user = await Hospital.exists({ _id: superior });
+            check_user = await Hospital.exists({ _id: inferior });
+        } else if (accountType == 4) {
+            check_user = await Customer.exists({ _id: superior });
+            check_user = await Customer.exists({ _id: inferior });
+        }
 
-exports.forgotPassword = async (req, res) => {
-    let { email, typeAcc } = req.body;
-
-    let user = {}
-    if (typeAcc == 0) {
-        user = await Admin.findOne({ Admin_email: email });
+        if(!check_user){
+            return res.status(500).json({ message: "id user is not valid" });
+        }
+            let checkRole = await func.checkRole(superior, inferior, accountType);
+            if (checkRole) {
+                role_accounts.map(async(role_account) =>{
+                    let maxIdrole = await func.maxID(Role);
+                    let new_roleUser = new Role({
+                        _id: maxIdrole + 1,
+                        id_user: inferior,
+                        account_type: accountType,
+                        role_admin: accountType == 0 ? 0 : 1,
+                        roleUser: role_account
+                    });
+                    await new_roleUser.save()
+                })
+               
+               return res.status(200).json({ message: "decentralize success" });
+            }
+            return res.status(400).json({ message: "function is not available" }); 
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ message: err.message })
     }
-    if (typeAcc == 1 || typeAcc == 2) {
-        user = await Employee.findOne({ employeeEmail: email });
-    }
-    if (typeAcc == 3) {
-        user = await Hospital.findOne({ hospitalEmail: email });
-    }
-    if (typeAcc == 4) {
-        user = await Customer.findOne({ Customer_email: email });
-    }
-    else {
-        return res.status(400).send("type Account is not valid");
-    }
-
-
-}
-exports.passwordReset = (req, res) => {
-
 }

@@ -17,21 +17,25 @@ const role = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    role_doctor: {// bác sĩ 
-        type: Number,
-        default: 0
-    },
-    role_hospital: {//cơ sở y tế 
-        type: Number,
-        default: 0
-    },
-    role_customer: {// khách hàng 
-        type: Number,
-        default: 0
-    },
-    role_receptionist: {//lễ tân 
-        type: Number,
-        default: 0
+    // role_doctor: {// bác sĩ 
+    //     type: Number,
+    //     default: 0
+    // },
+    // role_hospital: {//cơ sở y tế 
+    //     type: Number,
+    //     default: 0
+    // },
+    // role_customer: {// khách hàng 
+    //     type: Number,
+    //     default: 0
+    // },
+    // role_receptionist: {//lễ tân 
+    //     type: Number,
+    //     default: 0
+    // }
+    roleUser: {//code roleUer
+        type: String,
+        required: true
     }
 });
 module.exports = mongoose.model("Role", role);

@@ -1,5 +1,9 @@
 const validator = require("email-validator");
 const jwt = require('jsonwebtoken');
+const Employee = require("../models/Employee");
+const Hospital = require("../models/Hospital");
+const Customer = require("../models/Customer");
+const Admin = require("../models//admin");
 require("dotenv").config();
 exports.maxID = async (model) => {
     const maxUser = await model.findOne({}, {}, { sort: { _id: -1 } });
@@ -59,3 +63,37 @@ exports.checkToken = (req, res, next) => {
         next();
     });
 };
+exports.getUserbyId = async (id_user, accountType) => {
+    let user = {}
+    if (accountType == 0) {
+        let user = await Admin.findOne({ _id: id_user });
+    } else if (accountType == 1 || accountType == 2) {
+        let user = await Employee.findOne({ _id: id_user });
+    } else if (accountType == 3) {
+        let user = await Hospital.findOne({ _id: id_user });
+    }
+    else {
+        let user = await Customer.findOne({ _id: id_user });
+    }
+    return user;
+}
+
+exports.checkRole = async (superior, inferior, accountType) => {
+    user_superior = await getUserbyId(superior);
+    user_inferior = await getUserbyId(inferior);
+    let check_role = false;
+
+    if (accountType == 3) {
+        check_role = await Admin.exists({ _id: superior })
+        return check_role;
+    }
+    else if (accountType == 1 || accountType == 2) {
+        check_role = user_superior.id == user_inferior.hopitalID
+    }
+    else {
+        check_role = await Admin.exists({ _id: superior })
+    }
+    return check_role;
+
+
+}
