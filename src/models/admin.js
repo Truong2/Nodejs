@@ -29,6 +29,10 @@ const admin_model = new mongoose.Schema({
     },
     CreateAt: {
         type: Date
+    },
+    status: {
+        type: Number,
+        default: 0
     }
 })
 

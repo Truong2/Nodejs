@@ -14,8 +14,6 @@ const hbs = require('nodemailer-express-handlebars')
 require("dotenv").config()
 exports.Register = async (req, res) => {
     try {
-
-
         let { userName,
             userType,//1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng  
             userEmail,
@@ -26,25 +24,16 @@ exports.Register = async (req, res) => {
             hopitalID
         } = req.body;
         userPassword = await bcrypt.hash(userPassword, 10);
-
-
         if (!userType || !userEmail || !userPassword) {
             return res.status(500).json({ message: "input is not valid" });
-
         }
-
         let checkEmail = await func.checkEmail(userEmail);
-
         if (!checkEmail) {
-
             return res.status(400).json({ message: "email is not valid" });
-
         }
         let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
-
         if (!checkPhone) {
             return res.status(404).json({ message: "phoneNumber is not valid" });
-
         }
         if (userType == 0) {//admin
             let checkExits = await Admin.exists({ Admin_email: userEmail.toLowerCase() });
@@ -67,7 +56,6 @@ exports.Register = async (req, res) => {
                 Admin_name: userName,
                 Admin_email: userEmail.toLowerCase(),
                 Admin_password: userPassword,
-                employeePhone: userPhoneNumber,
                 Admin_role: role_admin._id,
                 CreateAt: new Date()
             });
@@ -80,7 +68,6 @@ exports.Register = async (req, res) => {
             if (checkExits) {
                 return res.status(400).json({ message: "email already used" });
             }
-
 
             let maxId_employee = await func.maxID(Employee);
             let maxId_role = await func.maxID(Role);
@@ -116,10 +103,8 @@ exports.Register = async (req, res) => {
                 CreateAt: new Date()
             });
 
-
             await new_Employee.save().then(() => res.status(200).json({ message: "add employee success" }))
                 .catch((err) => res.status(400).json({ message: err.message }));
-
         } else if (userType == 3) {
             let checkExits = await Hospital.exists({ hospitalEmail: userEmail.toLowerCase() });
             if (checkExits) {
@@ -180,7 +165,6 @@ exports.Register = async (req, res) => {
                 .then(() => res.status(200).json({ message: "add customer success" }))
                 .catch((err) => res.status(400).json({ message: err.message }));
 
-
         } else {
             res.status(200).json({ message: "userType is not valid" });
         }
@@ -190,6 +174,7 @@ exports.Register = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
+
 exports.login = async (req, res) => {
     try {
         let {
@@ -201,8 +186,6 @@ exports.login = async (req, res) => {
             res.status(404).json({ message: "input is not valid" });
             return;
         }
-
-
         //find by email and password
         //0-admin1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng 
         if (userType == 0) {
@@ -217,7 +200,6 @@ exports.login = async (req, res) => {
             if (!check_password) {
                 return res.status(404).json({ message: "password is not valid" });
             }
-
             let data = {
                 _id: findUser._id,
                 name: findUser.Admin_name,
@@ -225,22 +207,17 @@ exports.login = async (req, res) => {
                 accountType: 0,
                 createAt: findUser.CreateAt
             }
-
             let token = await func.createToken(data, '7d');
             let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
             res.status(200).json({ data: { token: token, role: role }, message: " employee login sucess" });
         }
         else if (userType == 1 || userType == 2) {
-
             let findUser = await Employee.findOne({
                 employeeEmail: email.toLowerCase(),
                 employeePassword: password,
-
             })
-
             if (!findUser) {
                 return res.status(400).json({ message: "email or password is not correct" });
-
             }
             let data = {
                 _id: findUser._id,
@@ -252,22 +229,15 @@ exports.login = async (req, res) => {
                 birthday: findUser.employeeBirthday,
                 gender: findUser.employeeGender,
             }
-
             let token = await func.createToken(data, '7d');
-
-
             let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
-
-
             res.status(200).json({ data: { token: token, role: role }, message: " employee login sucess" });
         }
         else if (userType == 3) {
-
             let findUser = await Hospital.findOne({
                 hospitalEmail: email.toLowerCase(),
                 hospitalPassword: password
             })
-
             if (!findUser) {
                 res.status(400).json({ message: "email or password is not correct" });
                 return;
@@ -284,21 +254,16 @@ exports.login = async (req, res) => {
                 // roleId: findUser.roleId,
             }
             let token = await func.createToken(data, '7d');
-
             let role = await Role.findOne({ user_id: findUser._id, account_type: 3 });
-
             res.status(200).json({ data: { token: token, role: role }, message: " hospital login sucess" });
         }
         else if (userType == 4) {
-
             let findUser = await Customer.findOne({
                 Customer_email: email.toLowerCase(),
                 Cutomer_password: password
             })
-
             if (!findUser) {
                 return res.status(400).json({ message: "email or password is not correct" });
-
             }
             let role = await Role.findOne({ user_id: findUser._id, account_type: 4 });
             let data = {
@@ -315,7 +280,6 @@ exports.login = async (req, res) => {
             let token = await func.createToken(data, '7d');
             res.status(200).json({ data: { token: token, role: role }, message: " custommeer login sucess" });
         }
-
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: err.message });
@@ -325,9 +289,6 @@ exports.login = async (req, res) => {
 exports.getInfoPerson = async (req, res) => {
     let { _id, accountType } = req.user.data;
     try {
-        console.log(_id)
-
-
         if (accountType == 0) {
             let info = await Admin.findOne({ _id: _id });
             if (!info) {
@@ -355,7 +316,6 @@ exports.getInfoPerson = async (req, res) => {
         } else {
             return res.status(400).json({ message: "you don't have permission to access this page" })
         }
-
     } catch (err) {
         {
             console.log(err)
@@ -365,12 +325,7 @@ exports.getInfoPerson = async (req, res) => {
 }
 
 exports.forgotPassword = async (req, res) => {
-    //let { email, typeAcc } = req.body;
-    let superior = req.user.data._id;
-    console.log(superior)
-    //  let { superior, inferior, role_account ,accountType} = req.body;
-    return res.status(500).json({ data: superior, message: "ok" })
-
+    let { email, typeAcc } = req.body;
     try {
         let user = {}
         if (typeAcc == 0) {
@@ -469,7 +424,6 @@ exports.decentralization = async (req, res) => {
                 });
                 await new_roleUser.save()
             })
-
             return res.status(200).json({ message: "decentralize success" });
         }
         return res.status(400).json({ message: "function is not available" });
@@ -478,3 +432,129 @@ exports.decentralization = async (req, res) => {
         return res.status(500).json({ message: err.message })
     }
 }
+
+exports.getInfoPerson = async (req, res) => {
+    try {
+        const user_id = req.params.userId;
+
+
+
+        return res.status(200).json({ message: user_id })
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ message: err.message })
+    }
+}
+
+exports.getListAdmin = async (req, res) => {
+    try {
+        user_id = req.user.data._id;
+        accountType = req.user.data.accountType;
+        limit = req.body.limit;
+        skip = req.body.skip;
+
+        if (accountType != 0) {
+            return res.status(400).json({ message: "function is not valid" })
+        }
+        let list_admin = await Admin.aggregate([
+            {
+                $lookup: {
+                    from: 'roles',
+                    localField: 'Admin_role',
+                    foreignField: '_id',
+                    as: 'Role'
+                }
+            },
+            { $unwind: { path: '$Role', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    "id": "$_id",
+                    "email": "$Admin_email",
+                    "name": "$Admin_name",
+                    // "status": "$status"
+                }
+            },
+            {
+                $limit: Number(limit)
+            },
+            {
+                $skip: Number((skip - 1) * limit)
+            }
+        ])
+        return res.status(200).json({ data: list_admin, message: "OK" })
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ message: err.message })
+    }
+}
+
+exports.resetPassWord = async (req, res) => {
+    try {
+        user_id = req.user.data._id;
+        accountType = req.user.data.accountType;
+        client_id = req.body.id;
+        new_pass = req.body.new_pass;
+        console.log(user_id)
+        console.log(client_id)
+        if (Number(user_id) != Number(client_id)) {
+            return res.status(400).json({ message: "fuction is not valid" })
+        }
+        let new_password = await bcrypt.hash(new_pass, 10);
+        if (accountType == 0) {
+            let info = await Admin.findOneAndUpdate(
+                { _id: user_id },
+                { Admin_password: new_password }
+            );
+            return res.status(200).json({ data: info, message: "get info admin sucess" });
+        } else if (accountType == 1 || accountType == 2) {
+            let info = await Employee.findOneAndUpdate(
+                { _id: user_id },
+                { employeePassword: new_password });
+
+            return res.status(200).json({ data: info, message: "get info employee success" });
+        } else if (accountType == 3) {
+            let info = await Hospital.findOneAndUpdate(
+                { _id: user_id },
+                { hospitalPassword: new_password });
+
+            return res.status(200).json({ data: info, message: "get info Hospital success" });
+        } else if (accountType == 4) {
+            let info = await Customer.findOneAndUpdate(
+                { _id: user_id },
+                { Cutomer_password: new_password });
+
+            return res.status(200).json({ data: info, message: "get info customer success" });
+        }
+
+
+
+
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ message: err.message })
+    }
+
+}
+
+exports.editProfile = async (req, res) => {
+    try {
+
+        let { userName,
+            userType,//1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng  
+            userEmail,
+            userPassword,
+            userPhoneNumber,
+            userBirthday,
+            userGender,//1-nam ,2-nữ
+            hopitalID
+        } = req.body;
+
+
+    } catch (err) {
+        console.log(err)
+        return res.status(200).json({ data: info, message: "get info customer success" });
+    }
+
+
+}
+
