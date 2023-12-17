@@ -17,11 +17,9 @@ const admin_model = new mongoose.Schema({
         type: String,
         required: true
     },
-    Admin_role: {
-        // type: mongoose.Schema.Types.ObjectId,
+    Admin_Dsecentralize: {
         type: Number,
-        ref: 'Role',
-        default: null
+        ref: "Decentralize"
     },
     Admin_area: {
         type: Number,

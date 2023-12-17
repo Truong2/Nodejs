@@ -56,7 +56,7 @@ exports.Register = async (req, res) => {
                 Admin_name: userName,
                 Admin_email: userEmail.toLowerCase(),
                 Admin_password: userPassword,
-                Admin_role: role_admin._id,
+                // _id: maxId_admin._id,
                 CreateAt: new Date()
             });
             await new_Admin.save().then(() => res.status(200).json({ message: "add admin success" }))
@@ -99,7 +99,7 @@ exports.Register = async (req, res) => {
                 employeeBirthday: userBirthday,
                 employeeGender: userGender,
                 hopitalID: hopitalID,
-                role: role_employee._id,
+                // _employee._id,
                 CreateAt: new Date()
             });
 
@@ -127,7 +127,7 @@ exports.Register = async (req, res) => {
                 hospitalEmail: userEmail.toLowerCase(),
                 hospitalPassword: userPassword,
                 hospitalPhone: userPhoneNumber,
-                role: role_hos._id,
+                // _hos._id,
                 CreateAt: new Date(),
             });
 
@@ -208,8 +208,8 @@ exports.login = async (req, res) => {
                 createAt: findUser.CreateAt
             }
             let token = await func.createToken(data, '7d');
-            let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
-            res.status(200).json({ data: { token: token, role: role }, message: " employee login sucess" });
+            // let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
+            res.status(200).json({ data: { token: token }, message: " admin login sucess" });
         }
         else if (userType == 1 || userType == 2) {
             let findUser = await Employee.findOne({
@@ -230,8 +230,8 @@ exports.login = async (req, res) => {
                 gender: findUser.employeeGender,
             }
             let token = await func.createToken(data, '7d');
-            let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
-            res.status(200).json({ data: { token: token, role: role }, message: " employee login sucess" });
+            //  let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
+            res.status(200).json({ data: { token: token, }, message: " employee login sucess" });
         }
         else if (userType == 3) {
             let findUser = await Hospital.findOne({
@@ -255,7 +255,7 @@ exports.login = async (req, res) => {
             }
             let token = await func.createToken(data, '7d');
             let role = await Role.findOne({ user_id: findUser._id, account_type: 3 });
-            res.status(200).json({ data: { token: token, role: role }, message: " hospital login sucess" });
+            res.status(200).json({ data: { token: token, }, message: " hospital login sucess" });
         }
         else if (userType == 4) {
             let findUser = await Customer.findOne({
@@ -275,10 +275,10 @@ exports.login = async (req, res) => {
                 address: findUser.Custome_address,
                 //  birthday: findUser.employeeBirthday,
                 gender: findUser.Custome_gender,
-                role: role
+
             }
             let token = await func.createToken(data, '7d');
-            res.status(200).json({ data: { token: token, role: role }, message: " custommeer login sucess" });
+            res.status(200).json({ data: { token: token, }, message: " custommeer login sucess" });
         }
     } catch (err) {
         console.log(err);

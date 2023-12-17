@@ -42,9 +42,9 @@ const Hospital = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employee',
     }],
-    role: {
+    hos_Dsecentralize: {
         type: Number,
-        ref: "Role"
+        ref: "Decentralize"
     },
     CreateAt: {
         type: Date

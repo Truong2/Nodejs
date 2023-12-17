@@ -27,6 +27,10 @@ const Customer = new mongoose.Schema({
     },
     Custome_address: {
         type: String
+    },
+    Custome_decentralize: {
+        type: Number,
+        ref: "Decentralize"
     }
 })
 

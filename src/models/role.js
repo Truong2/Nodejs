@@ -5,37 +5,22 @@ const role = new mongoose.Schema({
         type: Number,
         require: true
     },
-    user_id: {
-        type: Number,
-        required: true
-    },
-    account_type: {
-        type: Number,
-        required: true
-    },
-    role_admin: {
-        type: Number,
-        default: 0
-    },
-    // role_doctor: {// bác sĩ 
-    //     type: Number,
-    //     default: 0
-    // },
-    // role_hospital: {//cơ sở y tế 
-    //     type: Number,
-    //     default: 0
-    // },
-    // role_customer: {// khách hàng 
-    //     type: Number,
-    //     default: 0
-    // },
-    // role_receptionist: {//lễ tân 
-    //     type: Number,
-    //     default: 0
-    // }
-    roleUser: {//code roleUer
+    role_name: {
         type: String,
-        required: true
+        require: true
+    },
+    status: {
+        type: Number,
+        require: true,
+        default: 1 // 0 is active and 1 is deactive
+    },
+    role_user: [{
+        type: Number,
+        ref: 'RoleUser'
+    }],
+    role_createateAt: {
+        type: Number,
+        default: new Date().getTime()
     }
 });
 module.exports = mongoose.model("Role", role);

@@ -19,6 +19,9 @@ mongoose.connect('mongodb+srv://chamsocsuckhoe:cssk123@chamsocsuckhoe.evqmxbw.mo
 var authRoute = require('./routes/auth');
 app.use('/api', authRoute);
 
+var roleRoute = require('./routes/RoleUser/routes_role')
+app.use('/api', roleRoute)
+
 app.listen(port, process.env.APP_HOST, () => {
   // eslint-disable-next-line no-console
   console.log(`server is running at ${process.env.APP_HOST}:${port}`);

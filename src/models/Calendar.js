@@ -48,7 +48,7 @@ const Calendar = new mongoose.Schema({
     Calendar_CreatAt: {
         type: Date
     },
-    Carlerndar_status: {
+    Calendar_status: {
         type: Number
     }
 })
