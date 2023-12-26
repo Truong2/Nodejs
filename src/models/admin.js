@@ -19,7 +19,8 @@ const admin_model = new mongoose.Schema({
     },
     Admin_Dsecentralize: {
         type: Number,
-        ref: "Decentralize"
+        ref: "Decentralize",
+        require: true
     },
     Admin_area: {
         type: Number,

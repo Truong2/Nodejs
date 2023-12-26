@@ -25,6 +25,11 @@ const Employee = new mongoose.Schema({
     employeePhone: {
         type: String
     },
+    employee_Dsecentralize: {
+        type: Number,
+        ref: "Decentralize",
+        require: true
+    },
 
     employeeAddress: {
         type: String
@@ -85,10 +90,6 @@ const Employee = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "CalendarWorking"
     }],
-    employeeDsecentralize: {
-        type: Number,
-        ref: "Decentralize"
-    },
     CreateAt: {
         type: Date
     },

@@ -15,23 +15,24 @@ const Customer = new mongoose.Schema({
     Cutomer_password: {
         type: String,
     },
-    Custome_Identification: {
+    Customer_Identification: {
         type: String
+    },
+    Customer_Dsecentralize: {
+        type: Number,
+        ref: "Decentralize",
+        require: true
     },
 
-    Custome_phoneNumber: {
+    Customer_phoneNumber: {
         type: String
     },
-    Custome_gender: {
+    Customer_gender: {
         type: Number
     },
-    Custome_address: {
+    Customer_address: {
         type: String
     },
-    Custome_decentralize: {
-        type: Number,
-        ref: "Decentralize"
-    }
 })
 
 module.exports = mongoose.model("Customer", Customer);
