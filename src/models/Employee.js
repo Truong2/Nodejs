@@ -97,7 +97,8 @@ const Employee = new mongoose.Schema({
         type: Date
     },
     employeeStatus: {
-        type: Number
+        type: Number,
+        default: 0
     }
 }
 );

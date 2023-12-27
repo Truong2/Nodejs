@@ -33,6 +33,10 @@ const Customer = new mongoose.Schema({
     Customer_address: {
         type: String
     },
+    Customer_address: {
+        type: Number,
+        default: 0
+    }
 })
 
 module.exports = mongoose.model("Customer", Customer);

@@ -54,7 +54,8 @@ const Hospital = new mongoose.Schema({
         type: Date
     },
     hopitalStatus: {
-        type: Number
+        type: Number,
+        default: 0
     }
 })
 
