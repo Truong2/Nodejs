@@ -3,17 +3,28 @@ const Specialist = new mongoose.Schema({
     _id: {
         type: Number
     },
-    Specialist_hosId: {
-        type: Number
-    },
     Specialist_Name: {
         type: String
     },
-    Specialist_userCreate: {
-        type: Number
+    Specialist_userCreate_id: {
+        type: Number,
+        require: true
+    },
+    Specialist_userCreate_name: {
+        type: String,
+        require: true
+    },
+    Specialist_userCreate_accountType: {
+        type: Number,
+        require: true
     },
     Specialist_createAt: {
-        type: Date
+        type: Number,
+        default: new Date().getTime()
+    },
+    Specialist_statusAccept: {
+        type: Number,
+        default: 1, //1- accept , 0 - don't accept
     }
 });
 

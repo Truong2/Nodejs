@@ -626,22 +626,22 @@ exports.getListAdmin = async (req, res) => {
   try {
     user_id = req.user.data._id;
     accountType = req.user.data.accountType;
-    limit = req.body.limit;
-    skip = req.body.skip;
+    limit = req.body.limit;//size
+    skip = req.body.skip;//page
 
     if (accountType != 0) {
       return res.status(400).json({ message: "function is not valid" })
     }
     let list_admin = await Admin.aggregate([
-      {
-        $lookup: {
-          from: 'roles',
-          localField: 'Admin_role',
-          foreignField: '_id',
-          as: 'Role'
-        }
-      },
-      { $unwind: { path: '$Role', preserveNullAndEmptyArrays: true } },
+      // {
+      //   $lookup: {
+      //     from: 'roles',
+      //     localField: 'Admin_role',
+      //     foreignField: '_id',
+      //     as: 'Role'
+      //   }
+      // },
+      // { $unwind: { path: '$Role', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           "id": "$_id",
@@ -650,12 +650,12 @@ exports.getListAdmin = async (req, res) => {
           // "status": "$status"
         }
       },
-      {
-        $limit: Number(limit)
-      },
-      {
-        $skip: Number((skip - 1) * limit)
-      }
+      // {
+      //   $limit: Number(limit)
+      // },
+      // {
+      //   $skip: Number((skip - 1) * limit)
+      // }
     ])
     return res.status(200).json({ data: list_admin, message: "OK" })
   } catch (err) {
