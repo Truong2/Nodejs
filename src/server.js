@@ -20,11 +20,10 @@ mongoose
   })
   .catch(() => console.log("DB connect failed!!!!"));
 
-var authRoute = require("./routes/auth");
+var authRoute = require("./routes/routes");
 app.use("/api", authRoute);
 
-var roleRoute = require("./routes/RoleUser/routes_role");
-app.use("/api", roleRoute);
+
 
 app.listen(port, process.env.APP_HOST, () => {
   // eslint-disable-next-line no-console

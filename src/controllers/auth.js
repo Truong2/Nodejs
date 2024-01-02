@@ -344,7 +344,7 @@ exports.getInfoPerson = async (req, res) => {
       if (!info) {
         return res.status(400).json({ message: "id user not exists" })
       }
-      return res.status(200).json({ data: info, message: "get info admin sucess" });
+      return res.status(200).json({ data: info[0], message: "get info admin sucess" });
 
     } else if (accountType == 1 || accountType == 2) {
       let info = await Employee.aggregate([
@@ -399,7 +399,7 @@ exports.getInfoPerson = async (req, res) => {
       if (!info) {
         return res.status(400).json({ message: "id user not exists" })
       }
-      return res.status(200).json({ data: info, message: "get info employee success" });
+      return res.status(200).json({ data: info[0], message: "get info employee success" });
     } else if (accountType == 3) {
       let info = await Hospital.aggregate([
         {
@@ -449,7 +449,7 @@ exports.getInfoPerson = async (req, res) => {
       if (!info) {
         return res.status(400).json({ message: "id user not exists" })
       }
-      return res.status(200).json({ data: info, message: "get info Hospital success" });
+      return res.status(200).json({ data: info[0], message: "get info Hospital success" });
     } else if (accountType == 4) {
       let info = await Customer.aggregate([
         {
@@ -499,7 +499,7 @@ exports.getInfoPerson = async (req, res) => {
       if (!info) {
         return res.status(400).json({ message: "id user not exists" })
       }
-      return res.status(200).json({ data: info, message: "get info customer success" });
+      return res.status(200).json({ data: info[0], message: "get info customer success" });
     } else {
       return res.status(400).json({ message: "you don't have permission to access this page" })
     }
