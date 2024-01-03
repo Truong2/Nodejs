@@ -10,6 +10,11 @@ const roleUserShema = new mongoose.Schema({
         type: String,
         required: true
     },
+    role_code: {
+        type: String,
+        required: true
+
+    },
     type_account: {
         type: Number,
         require: true

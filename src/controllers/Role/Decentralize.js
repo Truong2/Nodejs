@@ -8,7 +8,8 @@ exports.createRole = async (req, res) => {
             name_role,
             status,
             decentralize_role,
-            typeAccount
+            typeAccount,
+            decentralize_code
         } = req.body;
         const accountType = req.user.data.accountType;
         if (accountType !== 0) {
@@ -28,7 +29,8 @@ exports.createRole = async (req, res) => {
             decentralize_name: name_role,
             decentralize_role: decentralize_role,
             status: status,
-            typeAccount: typeAccount
+            typeAccount: typeAccount,
+            decentralize_code: decentralize_code
         })
         await new_role.save()
             .then(() => { return res.status(200).json({ message: "add role success" }) })
@@ -46,6 +48,7 @@ exports.updateDecentralize = async (req, res) => {
             name_role,
             status,
             decentralize_role,
+            code
 
         } = req.body;
 
@@ -71,6 +74,7 @@ exports.updateDecentralize = async (req, res) => {
                 decentralize_name: name_role,
                 status: status,
                 decentralize_role: decentralize_role,
+                decentralize_code: code
             }
         )
             .then(() => { return res.status(200).json({ message: "update role success" }) })
@@ -145,6 +149,7 @@ exports.detailDecentralizes = async (req, res) => {
                     'id': ' $_id',
                     'decentralize_name': '$decentralize_name',
                     'decentralize_role': ['$Role.role_name'],
+                    'decentralize_code': '$decentralize_code',
                     'status': '$status'
                 }
             }

@@ -14,13 +14,19 @@ exports.getListTypeAccount = async (req, res) => {
 exports.createRoleUser = async (req, res) => {
   try {
     let { role_name,
-      type_account, role_parent
+      type_account,
+      role_parent,
+      code
     } = req.body;
+
     const accountType = req.user.data.accountType;
-    if (accountType !== 0) {
-      return res.status(200).json({ message: "function is not valid" })
+    if (accountType !== 0 && accountType !== 3) {
+      return res.status(404).json({ message: "function is not valid" })
     }
-    if (!role_name || !Number(type_account)) {
+    console.log(role_name);
+    console.log();
+    console.log(code);
+    if (!role_name || !code || type_account == null) {
       return res.status(400).json({ message: "Bad request" })
     }
     const maxID_roleUser = await functions.maxID(RoleUser)
@@ -29,6 +35,7 @@ exports.createRoleUser = async (req, res) => {
       _id: maxID_roleUser + 1,
       role_name: (role_name),
       type_account: type_account,
+      role_code: code,
       role_parent: role_parent || null
     })
     await new_roleUser.save()
@@ -40,7 +47,7 @@ exports.createRoleUser = async (req, res) => {
 }
 exports.EditRleUser = async (req, res) => {
   try {
-    let { id, role_name,
+    let { id, role_name, code,
 
     } = req.body;
     const accountType = req.user.data.accountType;
@@ -56,7 +63,10 @@ exports.EditRleUser = async (req, res) => {
     }
     await RoleUser.findOneAndUpdate(
       { _id: id },
-      { role_name: role_name, }
+      {
+        role_name: role_name,
+        role_code: code,
+      }
     )
     return res.status(200).json({ message: " update success" })
   }
@@ -65,7 +75,6 @@ exports.EditRleUser = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
-
 
 exports.deleteRoleUser = async (req, res) => {
   try {
@@ -91,7 +100,6 @@ exports.deleteRoleUser = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
-
 exports.getListRoleUser = async (req, res) => {
   try {
     let data = await RoleUser.aggregate([
@@ -113,9 +121,9 @@ exports.getListRoleUser = async (req, res) => {
       {
         $group: {
           _id: '$_id',
-          id: { $first: '$id' },
           name: { $first: '$role_name' },
-          role_child: { $push: "$role_child" }
+          role_child: { $push: "$role_child" },
+          code: { $first: '$role_code' }
         }
       },
     ])
