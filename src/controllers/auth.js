@@ -40,6 +40,7 @@ exports.Register = async (req, res) => {
     }
 
     decentralize = JSON.parse(decentralize);
+    // decentralize = decentralize.split(',')
     const check_decentralize = await Decentralize.find({ _id: { $in: decentralize } })
     if (check_decentralize.length != decentralize.length) {
       return res.status(400).json({ message: "id decentralize is not valid" });
@@ -74,15 +75,20 @@ exports.Register = async (req, res) => {
         .catch((err) => res.status(400).json({ message: err.message }));
 
     }
+
     else if (userType == 1 || userType == 2) {
       let checkExits = await Employee.exists({ employeeEmail: userEmail.toLowerCase() });
       if (checkExits) {
         return res.status(400).json({ message: "email already used" });
       }
 
-      let maxId_employee = await func.maxID(Employee);
-      let maxId_role = await func.maxID(Role);
+      if (!hopitalID || Number(hopitalID) !== "number") {
+        return res.status(400).json({ message: "id hospital is not valid" });
+      }
 
+
+
+      let maxId_employee = await func.maxID(Employee);
 
       const new_Employee = new Employee({
         _id: maxId_employee + 1,
@@ -131,6 +137,7 @@ exports.Register = async (req, res) => {
         .catch((err) => res.status(400).json({ message: err.message }));
 
     }
+
     else if (userType == 4) {
       let checkExits = await Customer.exists({ Customer_email: userEmail.toLowerCase() });
       if (checkExits) {
@@ -616,7 +623,6 @@ exports.decentralization = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
-
 
 exports.getListAdmin = async (req, res) => {
   try {

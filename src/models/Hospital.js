@@ -19,11 +19,11 @@ const Hospital = new mongoose.Schema({
     hospitalIdentification: {
         type: String
     },
-    hospitalDsecentralize: {
+    hospitalDsecentralize: [{
         type: Number,
         ref: "Decentralize",
         require: true
-    },
+    }],
     hospitalPhone: {
         type: String,
     },
@@ -40,11 +40,11 @@ const Hospital = new mongoose.Schema({
         type: String
     },
     Specialist_ID: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Specialists',
+        type: Number,
+        ref: 'listspecialists',
     }],
     emplyee_id: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: 'Employee',
     }],
     CreateAt: {
