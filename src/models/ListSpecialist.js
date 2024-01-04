@@ -14,4 +14,4 @@ const Specialist = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model("Specialist", Specialist);
+module.exports = mongoose.model("ListSpecialist", Specialist);

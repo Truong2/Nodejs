@@ -18,11 +18,13 @@ exports.createRole = async (req, res) => {
         if (!name_role && decentralize_role.length === 0) {
             return res.status(200).json({ message: "bad request" })
         }
-        decentralize_role = decentralize_role.replace('[', '').replace(']', '').split(",").map(String)
+
+        decentralize_role = JSON.parse(decentralize_role);
         const check_list_role = await RoleUser.find({ _id: { $in: decentralize_role } })
         if (check_list_role.length !== decentralize_role.length) {
             return res.status(200).json({ message: "list role is not valid" })
         }
+
         const maxId_role = await functions.maxID(Decentralize)
         const new_role = new Decentralize({
             _id: maxId_role + 1,
@@ -89,19 +91,24 @@ exports.deletedentralize = async (req, res) => {
     try {
         let decentralize_id = req.body.id;
         const accountType = req.user.data.accountType;
+
         if (accountType !== 0) {
             return res.status(400).json({ message: "function is not valid" })
         }
-        if (!decentralize_id) {
-            return res.status(200).json({ message: "bad request" })
+
+        if (!decentralize_id || Number(decentralize_id) !== "number") {
+            return res.status(400).json({ message: "bad request" })
         }
+
         const check_exists = await Decentralize.exists({ _id: decentralize_id })
         if (!check_exists) {
             return res.status(404).json({ message: "Decentralize is not exists" })
         }
+
         await Decentralize.findOneAndDelete({ _id: decentralize_id })
             .then(() => { return res.status(200).json({ message: "delete decentralize success" }) })
             .catch((err) => { return res.status(400).json({ message: err.message }) })
+
     } catch (err) {
         console.log(err)
         return res.status(500).json({ message: err.message })

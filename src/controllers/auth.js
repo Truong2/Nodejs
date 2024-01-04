@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer");
 const bcrypt = require('bcryptjs');
 const crypto = require("crypto");
 const next = require('../utils/next');
+const Decentralize = require("../models/decentralize")
 require("dotenv").config()
 exports.Register = async (req, res) => {
   try {
@@ -23,17 +24,28 @@ exports.Register = async (req, res) => {
       hopitalID
     } = req.body;
     userPassword = await bcrypt.hash(userPassword, 10);
+
     if (!userType || !userEmail || !userPassword) {
       return res.status(500).json({ message: "input is not valid" });
     }
+
     let checkEmail = await func.checkEmail(userEmail);
     if (!checkEmail) {
       return res.status(400).json({ message: "email is not valid" });
     }
+
     let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
     if (!checkPhone) {
       return res.status(404).json({ message: "phoneNumber is not valid" });
     }
+
+    decentralize = JSON.parse(decentralize);
+    const check_decentralize = await Decentralize.find({ _id: { $in: decentralize } })
+    if (check_decentralize.length != decentralize.length) {
+      return res.status(400).json({ message: "id decentralize is not valid" });
+
+    }
+
     if (userType == 0) {//admin
       let checkExits = await Admin.exists({ Admin_email: userEmail.toLowerCase() });
       if (checkExits) {
@@ -71,21 +83,6 @@ exports.Register = async (req, res) => {
       let maxId_employee = await func.maxID(Employee);
       let maxId_role = await func.maxID(Role);
 
-      // let role = {};
-      // if (userType == 1) {
-      //   role.role_doctor = 1;
-      //   role._id = maxId_role + 1;
-      //   role.user_id = maxId_employee + 1;
-      //   role.account_type = 1;
-      // }
-      // if (userType == 2) {
-      //   role.role_receptionist = 1;
-      //   role._id = maxId_role + 1;
-      //   role.user_id = maxId_employee + 1;
-      //   role.account_type = 2;
-      // }
-      // const role_employee = new Role(role);
-      // await role_employee.save();
 
       const new_Employee = new Employee({
         _id: maxId_employee + 1,
@@ -619,7 +616,6 @@ exports.decentralization = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
-
 
 
 exports.getListAdmin = async (req, res) => {
