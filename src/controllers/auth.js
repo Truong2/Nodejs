@@ -23,10 +23,12 @@ exports.Register = async (req, res) => {
       userGender,//1-nam ,2-nữ
       hopitalID
     } = req.body;
+
+
     userPassword = await bcrypt.hash(userPassword, 10);
 
     if (!userType || !userEmail || !userPassword) {
-      return res.status(500).json({ message: "input is not valid" });
+      return res.status(400).json({ message: "input is not valid" });
     }
 
     let checkEmail = await func.checkEmail(userEmail);
@@ -111,15 +113,6 @@ exports.Register = async (req, res) => {
         return res.status(400).json({ message: "email already used" });
       }
       let maxId_Hos = await func.maxID(Hospital);
-      let maxId_role = await func.maxID(Role);
-
-      const role_hos = new Role({
-        _id: maxId_role + 1,
-        user_id: maxId_Hos + 1,
-        role_hospital: 1,
-        account_type: 3
-      });
-      await role_hos.save();
 
       const new_Hospital = new Hospital({
         _id: maxId_Hos + 1,

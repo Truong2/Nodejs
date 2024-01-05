@@ -8,6 +8,8 @@ app.use(cors());
 
 const port = process.env.APP_PORT;
 
+
+app.use(express.raw());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

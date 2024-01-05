@@ -41,7 +41,7 @@ const Hospital = new mongoose.Schema({
     },
     Specialist_ID: [{
         type: Number,
-        ref: 'listspecialists',
+        ref: 'specialists',
     }],
     emplyee_id: [{
         type: Number,
