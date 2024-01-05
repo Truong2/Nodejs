@@ -44,7 +44,6 @@ exports.Register = async (req, res) => {
     const check_decentralize = await Decentralize.find({ _id: { $in: decentralize } })
     if (check_decentralize.length != decentralize.length) {
       return res.status(400).json({ message: "id decentralize is not valid" });
-
     }
 
     if (userType == 0) {//admin
@@ -204,11 +203,13 @@ exports.login = async (req, res) => {
       let data = {
         _id: findUser._id,
         name: findUser.Admin_name,
-        area: findUser.Admin_area,
+        // area: findUser.Admin_area,
         accountType: 0,
         createAt: findUser.CreateAt,
         decentralize: findUser.Admin_Dsecentralize,
-        status: findUser.status
+        status: findUser.status,
+        email: findUser.Admin_email,
+        // address: findUser.address
       }
       let token = await func.createToken(data, '7d');
       // let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
@@ -235,6 +236,7 @@ exports.login = async (req, res) => {
         address: findUser.employeeAddress,
         birthday: findUser.employeeBirthday,
         gender: findUser.employeeGender,
+        email: findUser.employeeEmail,
       }
       let token = await func.createToken(data, '7d');
       //  let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
@@ -256,6 +258,7 @@ exports.login = async (req, res) => {
         _id: findUser._id,
         name: findUser.hospitalName,
         accountType: 3,
+        email: findUser.hospitalEmail,
         identification: findUser.hospitalIdentification,
         phone: findUser.hospitalPhone,
         address: findUser.hospitalAddress,
@@ -282,11 +285,11 @@ exports.login = async (req, res) => {
         _id: findUser._id,
         name: findUser.Customer_name,
         accountType: 4,
-        identification: findUser.Custome_Identification,
-        phone: findUser.Custome_phoneNumber,
-        address: findUser.Custome_address,
-        //  birthday: findUser.employeeBirthday,
-        gender: findUser.Custome_gender,
+        identification: findUser.Customer_Identification,
+        phone: findUser.Customer_phoneNumber,
+        address: findUser.Customer_address,
+        birthday: findUser.employeeBirthday,
+        gender: findUser.Customer_birthday,
       }
       let token = await func.createToken(data, '7d');
       res.status(200).json({ data: { token: token, }, message: " custommeer login sucess" });

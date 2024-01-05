@@ -17,11 +17,11 @@ const admin_model = new mongoose.Schema({
         type: String,
         required: true
     },
-    Admin_Dsecentralize: {
+    Admin_Dsecentralize: [{
         type: Number,
         ref: "Decentralize",
         require: true
-    },
+    }],
     Admin_area: {
         type: Number,
         default: 0

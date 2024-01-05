@@ -33,7 +33,7 @@ const Customer = new mongoose.Schema({
     Customer_address: {
         type: String
     },
-    Customer_address: {
+    Customer_birthday: {
         type: Number,
         default: 0
     }
