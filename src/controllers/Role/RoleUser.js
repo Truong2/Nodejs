@@ -79,7 +79,7 @@ exports.EditRleUser = async (req, res) => {
 exports.deleteRoleUser = async (req, res) => {
   try {
     let { id,
-    } = req.query;
+    } = req.params;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
       return res.status(400).json({ message: "function is not valid" })
@@ -87,7 +87,7 @@ exports.deleteRoleUser = async (req, res) => {
     if (!id) {
       return res.status(404).json({ message: "Bad request" })
     }
-    const check_exists = await RoleUser.exists({ _id: id })
+    const check_exists = await RoleUser.exists({ _id: Number(id) })
     if (!check_exists) {
       return res.status(404).json({ message: "Role is not exists" })
     }
