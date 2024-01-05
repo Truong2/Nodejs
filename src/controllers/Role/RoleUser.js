@@ -3,7 +3,7 @@ const functions = require("../../services/function")
 
 exports.getListTypeAccount = async (req, res) => {
   try {
-    const data = ['Admin', 'Bác sĩ', 'Lễ tân', , 'Cơ sở y tế', 'Khách hàng']
+    const data = ['Admin', 'Bác sĩ', 'Lễ tân', 'Cơ sở y tế', 'Khách hàng']
     return res.status(200).json({ data: data, message: "success" })
   }
   catch (err) {
@@ -11,6 +11,7 @@ exports.getListTypeAccount = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
+
 exports.createRoleUser = async (req, res) => {
   try {
     let { role_name,
@@ -23,14 +24,12 @@ exports.createRoleUser = async (req, res) => {
     if (accountType !== 0 && accountType !== 3) {
       return res.status(404).json({ message: "function is not valid" })
     }
-    console.log(role_name);
-    console.log();
-    console.log(code);
-    if (!role_name || !code || type_account == null) {
+
+    if (!role_name || !code || !type_account) {
       return res.status(400).json({ message: "Bad request" })
     }
     const maxID_roleUser = await functions.maxID(RoleUser)
-    console.log(maxID_roleUser)
+
     const new_roleUser = new RoleUser({
       _id: maxID_roleUser + 1,
       role_name: (role_name),
@@ -45,10 +44,11 @@ exports.createRoleUser = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
+
 exports.EditRleUser = async (req, res) => {
   try {
-    let { id, role_name, code,
-
+    let { id,
+      role_name,
     } = req.body;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
@@ -65,7 +65,7 @@ exports.EditRleUser = async (req, res) => {
       { _id: id },
       {
         role_name: role_name,
-        role_code: code,
+        // role_code: code,
       }
     )
     return res.status(200).json({ message: " update success" })
@@ -79,7 +79,7 @@ exports.EditRleUser = async (req, res) => {
 exports.deleteRoleUser = async (req, res) => {
   try {
     let { id,
-    } = req.body;
+    } = req.query;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
       return res.status(400).json({ message: "function is not valid" })
@@ -100,12 +100,18 @@ exports.deleteRoleUser = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
+
 exports.getListRoleUser = async (req, res) => {
   try {
+    let { name } = req.query;
     let data = await RoleUser.aggregate([
+
       {
         $match: {
-          role_parent: null
+          $and: [
+            { role_parent: null },
+            { role_name: { $regex: new RegExp(name, "i") } }
+          ]
         }
       },
       {
@@ -123,9 +129,15 @@ exports.getListRoleUser = async (req, res) => {
           _id: '$_id',
           name: { $first: '$role_name' },
           role_child: { $push: "$role_child" },
-          code: { $first: '$role_code' }
+          code: { $first: '$role_code' },
+          role_parent: { $first: '$role_parent' },
         }
       },
+      {
+        $sort: {
+          name: 1
+        }
+      }
     ])
     return res.status(200).json({ message: "success", data: data })
   }
@@ -134,10 +146,11 @@ exports.getListRoleUser = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
+
 exports.getListRoleUserChild = async (req, res) => {
   try {
     let id_group_role = req.params.id;
-    let list_role_user = await RoleUser.find({ role_parent: id_group_role })
+    let list_role_user = await RoleUser.find({ role_parent: Number(id_group_role) })
     return res.status(200).json({ message: "success", data: list_role_user })
   }
   catch (err) {

@@ -18,7 +18,6 @@ exports.createRole = async (req, res) => {
       return res.status(200).json({ message: "bad request" })
     }
 
-    decentralize_role = JSON.parse(decentralize_role);
     const check_list_role = await RoleUser.find({ _id: { $in: decentralize_role } })
     if (check_list_role.length !== decentralize_role.length) {
       return res.status(200).json({ message: "list role is not valid" })
@@ -34,6 +33,7 @@ exports.createRole = async (req, res) => {
       decentralize_code: decentralize_code
     })
     await new_role.save()
+
       .then(() => { return res.status(200).json({ message: "add role success" }) })
       .catch((err) => { return res.status(500).json({ message: err }) })
   } catch (err) {
@@ -60,15 +60,17 @@ exports.updateDecentralize = async (req, res) => {
     if (!name_role && decentralize_role.length === 0 || !decentralize_id) {
       return res.status(200).json({ message: "bad request" })
     }
-    decentralize_role = decentralize_role.replace('[', '').replace(']', '').split(",").map(String)
+
     const check_list_role = await RoleUser.find({ _id: { $in: decentralize_role } })
     if (check_list_role.length !== decentralize_role.length) {
       return res.status(400).json({ message: "list role is not valid" })
     }
+
     const check_exists = await Decentralize.exists({ _id: decentralize_id })
     if (!check_exists) {
       return res.status(400).json({ message: "dencetrale is not exists" })
     }
+
     await Decentralize.findOneAndUpdate(
       { _id: decentralize_id },
       {
@@ -88,7 +90,7 @@ exports.updateDecentralize = async (req, res) => {
 
 exports.deletedentralize = async (req, res) => {
   try {
-    let decentralize_id = req.body.id;
+    let decentralize_id = req.params.decentralize_id;
     const accountType = req.user.data.accountType;
 
     if (accountType !== 0) {
@@ -115,11 +117,41 @@ exports.deletedentralize = async (req, res) => {
 
 exports.listDecentralize = async (req, res) => {
   try {
+    const { name } = req.query;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
       return res.status(400).json({ message: "function is not valid" })
     }
-    const list_decentralize = await Decentralize.find()
+    const list_decentralize = await Decentralize.aggregate([
+      {
+        $match: {
+          decentralize_name: { $regex: name }
+        }
+      },
+      {
+        $lookup: {
+          from: "roleusers",
+          localField: "decentralize_role",
+          foreignField: "_id",
+          as: "roleusers"
+        }
+      },
+      { $unwind: { path: "$roleusers", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$decentralize_name" },
+          role_child: { $push: "$roleusers" },
+          code: { $first: "$decentralize_code" },
+          status: { $first: "$status" }
+        }
+      },
+      {
+        $sort: {
+          name: -1
+        }
+      }
+    ])
     return res.status(200).json({ data: list_decentralize, message: "get list  decentralize success" })
 
   } catch (err) {
@@ -130,7 +162,7 @@ exports.listDecentralize = async (req, res) => {
 
 exports.detailDecentralizes = async (req, res) => {
   try {
-    let decentralize_id = req.body.id;
+    let decentralize_id = req.params.decentralize_id;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
       return res.status(400).json({ message: "function is not valid" })
@@ -138,7 +170,7 @@ exports.detailDecentralizes = async (req, res) => {
     const list_decentralize = await Decentralize.aggregate([
       {
         $match: {
-          _id: decentralize_id
+          _id: Number(decentralize_id)
         }
       },
       {
@@ -154,7 +186,7 @@ exports.detailDecentralizes = async (req, res) => {
         $project: {
           'id': ' $_id',
           'decentralize_name': '$decentralize_name',
-          'decentralize_role': ['$Role.role_name'],
+          'decentralize_role': ['$Role'],
           'decentralize_code': '$decentralize_code',
           'status': '$status'
         }

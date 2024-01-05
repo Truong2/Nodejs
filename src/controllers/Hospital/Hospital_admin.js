@@ -1,8 +1,7 @@
 const Hospital = require('../../models/Hospital')
 const Decentralizes = require('../../models/decentralize')
 
-const get_list_hospital = async (name) => {
-
+const get_list_hospital = async (name, page, pageSize, sort) => {
 	const list = await Hospital.aggregate([
 		{
 			$match: {
@@ -39,20 +38,41 @@ const get_list_hospital = async (name) => {
 				address: { $first: '$hospitalAddress' },
 				status: { $first: '$hopitalStatus' },
 			}
+		},
+		{
+			$skip: Number(pageSize * (page - 1))
+		},
+		{
+			$limit: Number(pageSize)
+		},
+		{
+			$sort: {
+				name: Number(sort)
+			}
 		}
 	])
 
-	return list;
+	return {
+		list_hospital: list,
+		page: page,
+		size: pageSize,
+		total_record: list.length,
+		total_page: parseInt(list.length / pageSize + 1),
+	}
 }
 
 exports.getListHospital = async (req, res) => {
 	try {
-		let { name } = req.query;
+		const name = req.query.name;
+		const page = req.query.page || 1;
+		const pageSize = req.query.pageSize || 10;
+		const sort = req.query.sort || -1;
+
 		const data = req.user.data;
 		if (data.accountType != 0) {
 			return res.status(400).json({ message: "Function is not valid" })
 		}
-		const list_hospital = await get_list_hospital(name)
+		const list_hospital = await get_list_hospital(name, page, pageSize, sort)
 		return res.status(200).json({ message: "success", data: list_hospital })
 
 	} catch (err) {
@@ -70,6 +90,7 @@ exports.editHospital = async (req, res) => {
 			address,
 			practicingCertificateID,
 			UPracticingCertificateImg,
+			decentralize,
 			status
 		} = req.body;
 
@@ -83,6 +104,10 @@ exports.editHospital = async (req, res) => {
 			return res.status(400).json({ message: "id hospital is not valid" })
 		}
 
+		const check_decentralize = await Decentralizes.find({ _id: { $in: decentralize } })
+		if (decentralize.length !== check_decentralize.length) {
+			return res.status(400).json({ message: "decentralize is not valid" })
+		}
 		await Hospital.findOneAndUpdate({
 			_id: id
 		}, {
@@ -90,12 +115,13 @@ exports.editHospital = async (req, res) => {
 			hospitalIdentification: identification,
 			hospitalPhone: phone,
 			hospitalAddress: address,
+			hospitalDsecentralize: decentralize,
 			hos_PracticingCertificateID: practicingCertificateID,
 			hos_UPracticingCertificateImg: UPracticingCertificateImg,
 			hopitalStatus: status
 		}).then(async () => {
-			const list_hospital = await get_list_hospital("")
-			return res.status(200).json({ message: "update success", data: list_hospital });
+			// const list_hospital = await get_list_hospital("", null, null, null)
+			return res.status(200).json({ message: "update success", });
 		})
 			.catch((err) => {
 				return res.status(500).json({ message: err.message })
@@ -117,7 +143,7 @@ exports.grantRoleHospital = async (req, res) => {
 			return res.status(400).json({ message: "Function is not valid" })
 		}
 
-		decentralize = JSON.parse(decentralize)
+
 		const check_role = await Decentralizes.find({ _id: { $in: decentralize } })
 		if (decentralize.length !== check_role.length) {
 			return res.status(400).json({ message: "decentralize is not valid" })
@@ -133,8 +159,8 @@ exports.grantRoleHospital = async (req, res) => {
 			hospitalDsecentralize: decentralize
 		})
 			.then(async () => {
-				const list_hospital = await get_list_hospital("")
-				return res.status(200).json({ message: "update success", data: list_hospital });
+				// const list_hospital = await get_list_hospital("")
+				return res.status(200).json({ message: "update success", });
 			})
 			.catch(err => { return res.status(500).json({ message: err.message }) })
 
@@ -163,8 +189,8 @@ exports.changeStatus = async (req, res) => {
 			hopitalStatus: Number(hospital.hopitalStatus) == 1 ? 0 : 1
 		})
 			.then(async () => {
-				const list_hospital = await get_list_hospital("")
-				return res.status(200).json({ message: "Cập nhật trạng thái thành công", data: list_hospital });
+				// const list_hospital = await get_list_hospital("")
+				return res.status(200).json({ message: "Cập nhật trạng thái thành công", });
 			})
 			.catch(err => { return res.status(500).json({ message: err.message }) })
 
@@ -177,7 +203,7 @@ exports.changeStatus = async (req, res) => {
 
 exports.deleteHospital = async (req, res) => {
 	try {
-		let { list_id } = req.body;
+		let { list_id } = req.params;
 		const data = req.user.data;
 
 		if (data.accountType != 0) {
@@ -186,8 +212,8 @@ exports.deleteHospital = async (req, res) => {
 		list_id = JSON.parse(list_id)
 		await Hospital.findOneAndDelete({ _id: { $in: list_id } })
 			.then(async () => {
-				const list_hospital = await get_list_hospital("")
-				return res.status(200).json({ message: "Xóa thành công", data: list_hospital });
+
+				return res.status(200).json({ message: "Xóa thành công", });
 			})
 			.catch(err => { return res.status(500).json({ message: err.message }) })
 	} catch (err) {
@@ -195,4 +221,3 @@ exports.deleteHospital = async (req, res) => {
 		return res.status(500).json({ message: err.message })
 	}
 }
-

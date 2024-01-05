@@ -24,7 +24,6 @@ exports.Register = async (req, res) => {
       hopitalID
     } = req.body;
 
-
     userPassword = await bcrypt.hash(userPassword, 10);
 
     if (!userType || !userEmail || !userPassword) {
@@ -41,8 +40,7 @@ exports.Register = async (req, res) => {
       return res.status(404).json({ message: "phoneNumber is not valid" });
     }
 
-    decentralize = JSON.parse(decentralize);
-    // decentralize = decentralize.split(',')
+    decentralize = decentralize.split(',').map(Number)
     const check_decentralize = await Decentralize.find({ _id: { $in: decentralize } })
     if (check_decentralize.length != decentralize.length) {
       return res.status(400).json({ message: "id decentralize is not valid" });
@@ -54,15 +52,6 @@ exports.Register = async (req, res) => {
         return res.status(400).json({ message: "email already used" });
       }
       let maxId_admin = await func.maxID(Admin);
-      let maxId_role = await func.maxID(Role);
-
-      const role_admin = new Role({
-        _id: maxId_role + 1,
-        user_id: maxId_admin + 1,
-        role_admin: 1,
-        account_type: 0
-      });
-      await role_admin.save();
 
       const new_Admin = new Admin({
         _id: maxId_admin + 1,
@@ -72,7 +61,8 @@ exports.Register = async (req, res) => {
         Admin_Dsecentralize: decentralize,
         CreateAt: new Date()
       });
-      await new_Admin.save().then(() => res.status(200).json({ message: "add admin success" }))
+      await new_Admin.save()
+        .then(() => res.status(200).json({ message: "add admin success" }))
         .catch((err) => res.status(400).json({ message: err.message }));
 
     }
@@ -86,8 +76,6 @@ exports.Register = async (req, res) => {
       if (!hopitalID || typeof (Number(hopitalID)) !== "number") {
         return res.status(400).json({ message: "id hospital is not valid" });
       }
-
-
 
       let maxId_employee = await func.maxID(Employee);
 
@@ -107,7 +95,9 @@ exports.Register = async (req, res) => {
 
       await new_Employee.save().then(() => res.status(200).json({ message: "add employee success" }))
         .catch((err) => res.status(400).json({ message: err.message }));
-    } else if (userType == 3) {
+    }
+
+    else if (userType == 3) {
       let checkExits = await Hospital.exists({ hospitalEmail: userEmail.toLowerCase() });
       if (checkExits) {
         return res.status(400).json({ message: "email already used" });
@@ -160,7 +150,9 @@ exports.Register = async (req, res) => {
         .then(() => res.status(200).json({ message: "add customer success" }))
         .catch((err) => res.status(400).json({ message: err.message }));
 
-    } else {
+    }
+
+    else {
       res.status(200).json({ message: "userType is not valid" });
     }
 
@@ -177,7 +169,9 @@ exports.login = async (req, res) => {
       password,
       userType//0-admin 1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách hàng 
     } = req.body;
-    if (!userType || !email || !password) {
+    console.log(email);
+    console.log(password);
+    if (typeof (Number(userType)) !== 'number' || !email || !password) {
       return res.status(404).json({ message: "input is not valid" });
     }
     //find by email and password
@@ -208,6 +202,7 @@ exports.login = async (req, res) => {
       // let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
       res.status(200).json({ data: { token: token }, message: " admin login sucess" });
     }
+
     else if (userType == 1 || userType == 2) {
 
       let findUser = await Employee.findOne({
@@ -235,6 +230,7 @@ exports.login = async (req, res) => {
       //  let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
       res.status(200).json({ data: { token: token, }, message: " employee login sucess" });
     }
+
     else if (userType == 3) {
       let findUser = await Hospital.findOne({
         hospitalEmail: email.toLowerCase(),
@@ -263,6 +259,7 @@ exports.login = async (req, res) => {
       let role = await Role.findOne({ user_id: findUser._id, account_type: 3 });
       res.status(200).json({ data: { token: token, }, message: " hospital login sucess" });
     }
+
     else if (userType == 4) {
       let findUser = await Customer.findOne({
         Customer_email: email.toLowerCase(),
@@ -627,24 +624,15 @@ exports.getListAdmin = async (req, res) => {
     const accountType = req.user.data.accountType;
     const pageSize = req.query.pageSize || 10;
     const page = req.query.page || 1;
-    const sort = req.query.sorts || 1;
-    const email = req.body.email;
-    const name = req.body.name;
-    const code_role = req.body.code_role;
+    const sort = req.query.sorts || -1;//  hoặc 1
+    const email = req.query.email || "";
+    const name = req.query.name || "";
+    const code_role = req.query.code_role;
 
     if (accountType != 0) {
       return res.status(400).json({ message: "function is not valid" })
     }
     let list_admin = await Admin.aggregate([
-      {
-        $math: {
-          $and: {
-            //  { Admin_email: email},
-
-          }
-
-        }
-      },
 
       {
         $lookup: {
@@ -655,6 +643,15 @@ exports.getListAdmin = async (req, res) => {
         }
       },
       { $unwind: { path: '$decentralizes', preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          $and: [
+            { Admin_email: { $regex: email?.toLowerCase() } },
+            { Admin_name: { $regex: name } },
+            // { "$decentralizes.decentralize_code": code_role }
+          ]
+        }
+      },
       {
         $group: {
           _id: "$_id",
@@ -670,10 +667,11 @@ exports.getListAdmin = async (req, res) => {
       { $limit: Number(pageSize) },
       {
         $sort: {
-          Admin_name: Number(sort)
+          name: Number(sort)
         }
       }
     ])
+
     return res.status(200).json({
       data: {
         list_admin: list_admin,
@@ -681,10 +679,10 @@ exports.getListAdmin = async (req, res) => {
         size: pageSize,
         total_record: list_admin.length,
         total_page: parseInt(list_admin.length / pageSize + 1),
-
       },
       message: "OK"
     })
+
   } catch (err) {
     console.log(err)
     return res.status(500).json({ message: err.message })

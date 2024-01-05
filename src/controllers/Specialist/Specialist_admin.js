@@ -64,22 +64,20 @@ exports.updateSpeclist = async (req, res) => {
 
 exports.deleteSpecialist = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     const { data } = req.user;
 
     if (data.accountType != 0) {
       return res.status(400).json({ message: "function is not valid" })
     }
 
-    const check_exists = await Specialist.exists({ _id: id });
+    const check_exists = await Specialist.exists({ _id: Number(id) });
     if (!check_exists) {
       return res.status(400).json({ message: "specialist_id is not valid" })
     }
 
     await Specialist.findOneAndDelete({ _id: id })
       .then(() => { return res.status(200).json({ message: "delete sucess" }) })
-
-
 
   } catch (err) {
     console.log("err: ", err);

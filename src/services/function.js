@@ -49,6 +49,7 @@ exports.createToken = async (data, time) => {
         data: data
     }, process.env.SECRET, { expiresIn: time });
 }
+
 exports.checkToken = (req, res, next) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
@@ -63,6 +64,7 @@ exports.checkToken = (req, res, next) => {
         next();
     });
 };
+
 exports.getUserbyId = async (id_user, accountType) => {
     let user = {}
     if (accountType == 0) {
@@ -96,4 +98,7 @@ exports.checkRole = async (superior, inferior, accountType) => {
     return check_role;
 
 
+}
+exports.formatSeach = (name) => {
+    return name.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '\\$&')
 }
