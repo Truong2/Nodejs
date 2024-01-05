@@ -74,7 +74,7 @@ exports.editHospital = async (req, res) => {
 		} = req.body;
 
 		const data = req.user.data;
-		if (data.accountType != 0) {
+		if (data.accountType != 0 && data.accountType != 3) {
 			return res.status(400).json({ message: "Function is not valid" })
 		}
 

@@ -54,7 +54,7 @@ exports.updateSpeclist = async (req, res) => {
       .then(() => { return res.status(200).json({ message: "update specialist success" }) })
       .catch((err) => { return res.status(500).json({ message: err.message }) })
 
-    return res.status(200).json({ message: "Ok" })
+
 
   } catch (err) {
     console.log("err: ", err);
@@ -77,6 +77,7 @@ exports.deleteSpecialist = async (req, res) => {
     }
 
     await Specialist.findOneAndDelete({ _id: id })
+      .then(() => { return res.status(200).json({ message: "delete sucess" }) })
 
 
 
@@ -89,11 +90,13 @@ exports.deleteSpecialist = async (req, res) => {
 exports.getListSpecialist = async (req, res) => {
   try {
     const { data } = req.user;
+    const { name } = req.query;
 
-    if (data.accountType != 0) {
+
+    if (data.accountType != 0 && data.accountType != 3) {
       return res.status(400).json({ message: "function is not valid" })
     }
-    const list_specialist = await Specialist.find()
+    const list_specialist = await Specialist.find({ Specialist_Name: { $regex: name } })
       .then((list) => { return res.status(200).json({ message: "get specialist success", data: list }) })
       .catch((err) => { return res.status(500).json({ message: err.message }) })
 

@@ -25,11 +25,11 @@ const Employee = new mongoose.Schema({
     employeePhone: {
         type: String
     },
-    employee_Dsecentralize: {
+    employee_Dsecentralize: [{
         type: Number,
         ref: "Decentralize",
         require: true
-    },
+    }],
 
     employeeAddress: {
         type: String
@@ -64,11 +64,11 @@ const Employee = new mongoose.Schema({
     employeeAcademicRank: {
         type: String
     },
-    SpecialistID: {
+    SpecialistID: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Specialists',
         default: null
-    },
+    }],
     employeeSalary: {
         type: Number
     },

@@ -83,7 +83,7 @@ exports.Register = async (req, res) => {
         return res.status(400).json({ message: "email already used" });
       }
 
-      if (!hopitalID || Number(hopitalID) !== "number") {
+      if (!hopitalID || typeof (Number(hopitalID)) !== "number") {
         return res.status(400).json({ message: "id hospital is not valid" });
       }
 
@@ -621,41 +621,70 @@ exports.decentralization = async (req, res) => {
 }
 
 exports.getListAdmin = async (req, res) => {
+
   try {
-    user_id = req.user.data._id;
-    accountType = req.user.data.accountType;
-    limit = req.body.limit;//size
-    skip = req.body.skip;//page
+    const user_id = req.user.data._id;
+    const accountType = req.user.data.accountType;
+    const pageSize = req.query.pageSize || 10;
+    const page = req.query.page || 1;
+    const sort = req.query.sorts || 1;
+    const email = req.body.email;
+    const name = req.body.name;
+    const code_role = req.body.code_role;
 
     if (accountType != 0) {
       return res.status(400).json({ message: "function is not valid" })
     }
     let list_admin = await Admin.aggregate([
-      // {
-      //   $lookup: {
-      //     from: 'roles',
-      //     localField: 'Admin_role',
-      //     foreignField: '_id',
-      //     as: 'Role'
-      //   }
-      // },
-      // { $unwind: { path: '$Role', preserveNullAndEmptyArrays: true } },
       {
-        $project: {
-          "id": "$_id",
-          "email": "$Admin_email",
-          "name": "$Admin_name",
-          // "status": "$status"
+        $math: {
+          $and: {
+            //  { Admin_email: email},
+
+          }
+
         }
       },
-      // {
-      //   $limit: Number(limit)
-      // },
-      // {
-      //   $skip: Number((skip - 1) * limit)
-      // }
+
+      {
+        $lookup: {
+          from: 'decentralizes',
+          localField: 'Admin_Dsecentralize',
+          foreignField: '_id',
+          as: 'decentralizes'
+        }
+      },
+      { $unwind: { path: '$decentralizes', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$_id",
+          email: { $first: "$Admin_email" },
+          name: { $first: "$Admin_name" },
+          role: { $push: "$decentralizes" },
+          status: { $first: "$status" }
+        }
+      },
+      {
+        $skip: Number(pageSize * (page - 1))
+      },
+      { $limit: Number(pageSize) },
+      {
+        $sort: {
+          Admin_name: Number(sort)
+        }
+      }
     ])
-    return res.status(200).json({ data: list_admin, message: "OK" })
+    return res.status(200).json({
+      data: {
+        list_admin: list_admin,
+        page: page,
+        size: pageSize,
+        total_record: list_admin.length,
+        total_page: parseInt(list_admin.length / pageSize + 1),
+
+      },
+      message: "OK"
+    })
   } catch (err) {
     console.log(err)
     return res.status(500).json({ message: err.message })
