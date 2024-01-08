@@ -103,13 +103,13 @@ exports.deleteRoleUser = async (req, res) => {
 
 exports.getListRoleUser = async (req, res) => {
   try {
-    let { name } = req.query;
+    let { name } = req.query || null;
     let data = await RoleUser.aggregate([
 
       {
         $match: {
           $and: [
-            { role_parent: null },
+            { role_parent: Number(-1) },
             { role_name: { $regex: new RegExp(name, "i") } }
           ]
         }
