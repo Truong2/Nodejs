@@ -109,7 +109,7 @@ exports.getListRoleUser = async (req, res) => {
       {
         $match: {
           $and: [
-            { role_parent: Number(-1) },
+            { role_parent: (-1) },
             { role_name: { $regex: new RegExp(name, "i") } }
           ]
         }
