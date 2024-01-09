@@ -3,26 +3,142 @@ const CalendarWorking = new mongoose.Schema({
     _id: {
         type: Number
     },
-    carlendarWorking_userID: {
+    userId: {
         type: Number
     },
-    carlendarWorking_userName: {
-        type: String
-    },
-    carlendarWorking_hospitalId: {
+    hospitalId: {
         type: Number
     },
     carlendarWorking_week: {
         type: {
-            Current_patient: {
-                type: Number
+            week: {
+                type: Number,
+                require: true,
+
             },
-            Max_patient: {
-                type: Number
+            year: {
+                type: Number,
+                require: true,
             },
-            Time_working: {
-                type: Date
-            }
+            t2: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    }, 
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t3: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t4: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t5: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t6: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t7: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }],
+            t8: [{
+                type: {
+                    time_start: {
+                        type: Number
+                    },
+                    time_end: {
+                        type: Number
+                    },
+                    Current_patient: {
+                        type: Number
+                    },
+                    Max_patient: {
+                        type: Number
+                    },
+                    default: null
+                }
+            }]
         }
     }
 

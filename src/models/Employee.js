@@ -13,7 +13,7 @@ const Employee = new mongoose.Schema({
     },
     employeeEmail: {
         type: String,
-
+        requrie: true
     },
     employeePassword: {
         type: String,
@@ -25,7 +25,7 @@ const Employee = new mongoose.Schema({
     employeePhone: {
         type: String
     },
-    employee_Dsecentralize: [{
+    employee_Decentralize: [{
         type: Number,
         ref: "Decentralize",
         require: true
@@ -65,7 +65,7 @@ const Employee = new mongoose.Schema({
         type: String
     },
     SpecialistID: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: 'Specialists',
         default: null
     }],
@@ -76,18 +76,16 @@ const Employee = new mongoose.Schema({
         type: Date
     },
     hopitalID: {
-        //type: mongoose.Schema.Types.ObjectId,
-
         type: Number,
         ref: 'Hospital',
         requrie: true
     },
     calendar: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: 'Calendar',
     }],
     calendarWorking: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,
         ref: "CalendarWorking"
     }],
     CreateAt: {
@@ -98,7 +96,7 @@ const Employee = new mongoose.Schema({
     },
     employeeStatus: {
         type: Number,
-        default: 0
+        default: 1
     }
 }
 );

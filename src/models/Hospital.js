@@ -33,7 +33,7 @@ const Hospital = new mongoose.Schema({
     hos_PracticingCertificateID: {
         type: String
     },
-    hos_UPracticingCertificateImg: {
+    hos_PracticingCertificateImg: {
         type: String
     },
     hos_certificateCreateAt: {
@@ -43,10 +43,6 @@ const Hospital = new mongoose.Schema({
         type: Number,
         ref: 'specialists',
     }],
-    emplyee_id: [{
-        type: Number,
-        ref: 'Employee',
-    }],
     CreateAt: {
         type: Date
     },
@@ -55,7 +51,7 @@ const Hospital = new mongoose.Schema({
     },
     hopitalStatus: {
         type: Number,
-        default: 0
+        default: 1
     }
 })
 

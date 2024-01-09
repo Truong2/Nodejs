@@ -1,14 +1,12 @@
 const Employee = require("../models/Employee");
 const Hospital = require("../models/Hospital");
 const Customer = require("../models/Customer");
-const RoleUser = require("../models/roleUser");
+const Specialist = require("../models/Specialist");
 const Admin = require("../models//admin");
 const Role = require("../models/role");
 const func = require("../services/function");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const next = require("../utils/next");
 const Decentralize = require("../models/decentralize");
 const { StatusCodes } = require("http-status-codes");
 const ApiError = require("../utils/ApiError ");
@@ -25,6 +23,7 @@ exports.Register = async (req, res) => {
     decentralize,
     userGender, //1-nam ,2-nữ
     hopitalID,
+    specialist
   } = req.body;
 
   userPassword = await bcrypt.hash(userPassword, 10);
@@ -34,7 +33,8 @@ exports.Register = async (req, res) => {
     userType === null ||
     userType === "" ||
     !userEmail ||
-    !userPassword
+    !userPassword ||
+    typeof (Number(userType)) == 'string'
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "input is not valid");
   }
@@ -48,12 +48,22 @@ exports.Register = async (req, res) => {
   if (!checkPhone) {
     throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
   }
-
+  console.log("decentralize", decentralize);
+  decentralize = decentralize.split(",").map(Number)
+  console.log("decentralize1", decentralize);
   const check_decentralize = await Decentralize.find({
     _id: { $in: decentralize },
   });
   if (check_decentralize.length != decentralize.length) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
+  }
+
+  specialist = specialist.split(",").map(Number)
+  const check_specialist = await Specialist.find({
+    _id: { $in: specialist },
+  });
+  if (check_specialist.length != specialist.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "id specialist is not valid");
   }
 
   if (userType == 0) {
@@ -102,7 +112,8 @@ exports.Register = async (req, res) => {
       employeeBirthday: userBirthday,
       employeeGender: userGender,
       hopitalID: hopitalID,
-      employee_Dsecentralize: decentralize,
+      employee_Decentralize: decentralize,
+      SpecialistID: specialist,
       CreateAt: new Date(),
     });
 
@@ -126,6 +137,7 @@ exports.Register = async (req, res) => {
       hospitalPassword: userPassword,
       hospitalPhone: userPhoneNumber,
       hospitalDsecentralize: decentralize,
+      Specialist_ID: specialist,
       CreateAt: new Date(),
     });
 
@@ -137,19 +149,11 @@ exports.Register = async (req, res) => {
     let checkExits = await Customer.exists({
       Customer_email: userEmail.toLowerCase(),
     });
+
     if (checkExits) {
       throw new Error(StatusCodes.BAD_REQUEST, "email already used");
     }
     let maxId_cus = await func.maxID(Customer);
-    let maxId_role = await func.maxID(Role);
-
-    const role_hos = new Role({
-      _id: maxId_role + 1,
-      user_id: maxId_cus + 1,
-      role_customer: 1,
-      account_type: 4,
-    });
-    await role_hos.save();
 
     const new_Customer = new Customer({
       _id: maxId_cus + 1,
@@ -316,6 +320,21 @@ exports.getInfoPerson = async (req, res) => {
   try {
     let { _id, accountType } = req.user.data;
 
+    const user_id = req.query.id;
+    const acc_type = req.query.acc_type;
+    console.log((isNaN(user_id) && user_id != ""))
+
+    if (
+      (isNaN(user_id) && user_id != "") ||
+      (isNaN(acc_type) && acc_type != "") ||
+      ((isNaN(user_id) && user_id != "") && isNaN(parseInt(acc_type)))
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "input is not valid" })
+    } else if (user_id != "") {
+      _id = Number(user_id);
+      accountType = Number(acc_type)
+    }
+
     if (accountType == 0) {
       let info = await Admin.aggregate([
         {
@@ -326,38 +345,25 @@ exports.getInfoPerson = async (req, res) => {
         {
           $lookup: {
             from: "decentralizes",
-            localField: "employee_Dsecentralize",
+            localField: "Admin_Dsecentralize",
             foreignField: "_id",
             as: "Decentralize",
           },
         },
         {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-        {
           $unwind: {
-            path: "$Decentralize.decentralize_role",
-            preserveNullAndEmptyArrays: true,
+            path: "$Decentralize",
+            preserveNullAndEmptyArrays: true
           },
         },
-        {
-          $lookup: {
-            from: "roleusers",
-            localField: "Decentralize.decentralize_role",
-            foreignField: "_id",
-            as: "roleusers",
-          },
-        },
-        { $unwind: { path: "$roleusers", preserveNullAndEmptyArrays: true } },
         {
           $group: {
             _id: "$_id",
             name: { $first: "$Admin_name" },
-            role: { $first: "$Decentralize.decentralize_name" },
-            role_id: { $first: "$Decentralize._id" },
-            area: { $first: "$Admin_area" || 0 },
-            roleusers: { $push: "$roleusers" },
+            mail: { $first: "$Admin_email" },
+            roleusers: { $push: "$Decentralize.decentralize_name" },
             type_account: { $first: accountType },
+            status: { $first: "$status" },
           },
         },
       ]);
@@ -367,17 +373,21 @@ exports.getInfoPerson = async (req, res) => {
       return res
         .status(200)
         .json({ data: info[0], message: "get info admin sucess" });
+
     } else if (accountType == 1 || accountType == 2) {
       let info = await Employee.aggregate([
         {
           $match: {
-            _id: _id,
+            $and: [
+              { _id: Number(_id) },
+              { employeeType: accountType }
+            ]
           },
         },
         {
           $lookup: {
             from: "decentralizes",
-            localField: "employee_Dsecentralize",
+            localField: "employee_Decentralize",
             foreignField: "_id",
             as: "Decentralize",
           },
@@ -385,28 +395,12 @@ exports.getInfoPerson = async (req, res) => {
         {
           $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
         },
-        {
-          $unwind: {
-            path: "$Decentralize.decentralize_role", // Unwind the decentralize_role array
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "roleusers", // The collection to join with
-            localField: "Decentralize.decentralize_role",
-            foreignField: "_id",
-            as: "roleusers",
-          },
-        },
-        { $unwind: { path: "$roleusers", preserveNullAndEmptyArrays: true } },
+
         {
           $group: {
             _id: "$_id",
             name: { $first: "$employeeName" },
-            role: { $first: "$Decentralize.decentralize_name" },
-            role_id: { $first: "$Decentralize._id" },
-            roleusers: { $push: "$roleusers" },
+            roleusers: { $push: "$Decentralize.decentralize_name" },
             email: { $first: "$employeeEmail" },
             phone: { $first: "$employeePhone" },
             address: { $first: "$employeeAddress" },
@@ -414,8 +408,17 @@ exports.getInfoPerson = async (req, res) => {
             experience: { $first: "$employeeExperience" },
             hopitalId: { $first: "$hopitalID" },
             status: { $first: "$employeeStatus" },
-            type_account: { $first: accountType },
-          },
+            type_account: { $first: "$employeeType" },
+            practicingCertificateId: { $first: "$PracticingCertificateID" },
+            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
+            salary: { $first: "$ employeeSalary" },
+            startWorking: { $first: "$ employeeStartWorking" },
+            status: { $first: "$employeeStatus" },
+            experience: { $first: "$employeeExperience" },
+            certificateCreateAt: { $first: "$certificateCreateAt" },
+            PracticingCertificateAdress: { $first: "$certificateCreateAt" },
+            gender: { $first: "$employeeGender" }
+          }
         },
       ]);
       if (!info) {
@@ -545,122 +548,8 @@ exports.getInfoPerson = async (req, res) => {
   }
 };
 
-exports.forgotPassword = async (req, res) => {
-  let { email, typeAcc } = req.body;
-  try {
-    let user = {};
-    if (typeAcc == 0) {
-      user = await Admin.findOne({ Admin_email: email });
-    } else if (typeAcc == 1 || typeAcc == 2) {
-      user = await Employee.findOne({ employeeEmail: email });
-    } else if (typeAcc == 3) {
-      user = await Hospital.findOne({ hospitalEmail: email });
-    } else if (typeAcc == 4) {
-      user = await Customer.json({ Customer_email: email });
-    } else {
-      return res.status(400).send({ message: "type Account is not valid" });
-    }
-    if (!user) {
-      return res
-        .status(404)
-        .json({ meessage: "can not find the user in databases" });
-    }
-    resetToken = "";
-    const resetUrl = `${req.protocol}:://${req.get(
-      "host"
-    )}/api/v1/user/resetPassword/${resetToken} `;
-    const message = `We have received a password request.Please use the below link to reset your password\n\n ${resetUrl}\n\nThis reset password link be valid only 10 minutes.`;
-    var transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "tinh.nv1610@gmail.com",
-        pass: "tinh16102001",
-      },
-    });
-    // use a template file with nodemailer
-    const mailOptions = {
-      from: "tinh.nv1610@gmail.com", // sender address
-      template: "email", // the name of the template file, i.e., email.handlebars
-      to: email,
-      subject: "Welcome to My Company,",
-      context: {
-        name: "tinh",
-        company: "my company",
-      },
-    };
-    try {
-      await transporter
-        .sendMail(mailOptions)
-        .then((data) => {
-          console.log("Mail sent", data);
-        })
-        .catch((err) => {
-          console.log("Failure", err);
-        });
-      return res.status(200).json({ message: "success" });
-    } catch (error) {
-      console.log(error);
-    }
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-exports.decentralization = async (req, res) => {
-  try {
-    // let { _id, accountType } = req.user.data;
-    let superior = req.user.data._id;
-    let accountType = req.user.data.accountType;
-    let { inferior, role_accounts } = req.body;
-    if (accountType > 4 || accountType < 0) {
-      return res
-        .status(400)
-        .json({ data: superior, message: "accountType is not valid" });
-    }
-    let check_user = true;
-    if (accountType == 0) {
-      check_user = await Admin.exists({ _id: superior });
-      check_user = await Admin.exists({ _id: inferior });
-    } else if (accountType == 1 || accountType == 2) {
-      check_user = await Employee.exists({ _id: superior });
-      check_user = await Employee.exists({ _id: inferior });
-    } else if (accountType == 3) {
-      check_user = await Hospital.exists({ _id: superior });
-      check_user = await Hospital.exists({ _id: inferior });
-    } else if (accountType == 4) {
-      check_user = await Customer.exists({ _id: superior });
-      check_user = await Customer.exists({ _id: inferior });
-    }
-
-    if (!check_user) {
-      return res.status(500).json({ message: "id user is not valid" });
-    }
-    let checkRole = await func.checkRole(superior, inferior, accountType);
-    if (checkRole) {
-      role_accounts.map(async (role_account) => {
-        let maxIdrole = await func.maxID(Role);
-        let new_roleUser = new Role({
-          _id: maxIdrole + 1,
-          id_user: inferior,
-          account_type: accountType,
-          role_admin: accountType == 0 ? 0 : 1,
-          roleUser: role_account,
-        });
-        await new_roleUser.save();
-      });
-      return res.status(200).json({ message: "decentralize success" });
-    }
-    return res.status(400).json({ message: "function is not available" });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: err.message });
-  }
-};
-
 exports.getListAdmin = async (req, res) => {
   try {
-    const user_id = req.user.data._id;
     const accountType = req.user.data.accountType;
     const pageSize = req.query.pageSize || 10;
     const page = req.query.page || 1;
@@ -681,7 +570,12 @@ exports.getListAdmin = async (req, res) => {
           as: "decentralizes",
         },
       },
-      { $unwind: { path: "$decentralizes", preserveNullAndEmptyArrays: true } },
+      {
+        $unwind: {
+          path: "$decentralizes",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $match: {
           $and: [
@@ -703,7 +597,9 @@ exports.getListAdmin = async (req, res) => {
       {
         $skip: Number(pageSize * (page - 1)),
       },
-      { $limit: Number(pageSize) },
+      {
+        $limit: Number(pageSize)
+      },
       {
         $sort: {
           name: Number(sort),
@@ -727,59 +623,212 @@ exports.getListAdmin = async (req, res) => {
   }
 };
 
-exports.resetPassWord = async (req, res) => {
-  try {
-    user_id = req.user.data._id;
-    accountType = req.user.data.accountType;
-    client_id = req.body.id;
-    new_pass = req.body.new_pass;
-    console.log(user_id);
-    console.log(client_id);
-    if (Number(user_id) != Number(client_id)) {
-      return res.status(400).json({ message: "fuction is not valid" });
+exports.getListHospital = async (req, res) => {
+
+  const hospital_name = req.query.hospital_name || "";
+  const email = req.query.email || "";
+  const page = req.query.page || 1;
+  const sort = req.query.sort || -1;
+  const pageSize = req.query.pageSize || 10;
+
+  const list_hospital = await Hospital.aggregate([
+    {
+      $match: {
+        $and: [
+          { hospitalName: { $regex: hospital_name } },
+          { hospitalEmail: { $regex: email?.toLowerCase() } },
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: "decentralizes",
+        localField: "hospitalDsecentralize",
+        foreignField: "_id",
+        as: "decentralizes"
+      }
+    },
+    {
+      $unwind: {
+        path: "$decentralizes",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "specialists",
+        localField: "Specialist_ID",
+        foreignField: "_id",
+        as: "specialists"
+      }
+    },
+    {
+      $unwind: {
+        path: "$specialists",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$hospitalName" },
+        email: { $first: "$hospitalEmail" },
+        identification: { $first: "$hospitalIdentification" },
+        role: { $push: "$decentralizes" },
+        specialist: { $push: "$specialists" },
+        phone: { $first: "$hospitalPhone" },
+        address: { $first: "$hospitalAddress" },
+        practicingCertificateID: { $first: "$hos_PracticingCertificateID" },
+        practicingCertificateImg: { $first: "$hos_PracticingCertificateImg" },
+        status: { $first: "$hopitalStatus" }
+      }
+    },
+    {
+      $skip: Number(pageSize * (page - 1)),
+    },
+    {
+      $limit: Number(pageSize)
+    },
+    {
+      $sort: {
+        name: Number(sort),
+      },
     }
-    let new_password = await bcrypt.hash(new_pass, 10);
-    if (accountType == 0) {
-      let info = await Admin.findOneAndUpdate(
-        { _id: user_id },
-        { Admin_password: new_password }
-      );
-      return res
-        .status(200)
-        .json({ data: info, message: "get info admin sucess" });
-    } else if (accountType == 1 || accountType == 2) {
-      let info = await Employee.findOneAndUpdate(
-        { _id: user_id },
-        { employeePassword: new_password }
-      );
+  ])
 
-      return res
-        .status(200)
-        .json({ data: info, message: "get info employee success" });
-    } else if (accountType == 3) {
-      let info = await Hospital.findOneAndUpdate(
-        { _id: user_id },
-        { hospitalPassword: new_password }
-      );
+  return res.status(StatusCodes.OK)
+    .json({
+      data: {
+        content: list_hospital,
+        page: page,
+        size: pageSize,
+        total_record: list_hospital.length,
+        total_page: parseInt(list_hospital.length / pageSize + 1),
+      },
+      message: "success"
+    })
 
-      return res
-        .status(200)
-        .json({ data: info, message: "get info Hospital success" });
-    } else if (accountType == 4) {
-      let info = await Customer.findOneAndUpdate(
-        { _id: user_id },
-        { Cutomer_password: new_password }
-      );
+}
 
-      return res
-        .status(200)
-        .json({ data: info, message: "get info customer success" });
-    }
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: err.message });
+exports.getListEmployee = async (req, res) => {
+  const user_login = req.user.data;
+  const employee_name = req.query.hospital_name || "";
+  const email = req.query.email || "";
+  const page = req.query.page || 1;
+  const sort = req.query.sort || -1;
+  const pageSize = req.query.pageSize || 10;
+
+  if (user_login.accountType !== 0 && user_login.accountType !== 3) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Function is not valid" })
   }
-};
+
+  const condition = {}
+  if (user_login.accountType == 3) {
+    condition.hopitalID = user_login._id
+  }
+
+  const list_employee = await Employee.aggregate([
+    {
+      $match: {
+        $and: [
+          { employeeName: { $regex: employee_name } },
+          { employeeEmail: { $regex: email?.toLowerCase() } },
+          condition
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: "decentralizes",
+        localField: "employee_Decentralize",
+        foreignField: "_id",
+        as: "decentralizes"
+      }
+    },
+    {
+      $unwind: {
+        path: "$decentralizes",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "hospitals",
+        localField: "hopitalID",
+        foreignField: "_id",
+        as: "hospitals"
+      }
+    },
+    {
+      $unwind: {
+        path: "$hospitals",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "specialists",
+        localField: "SpecialistID",
+        foreignField: "_id",
+        as: "specialists"
+      }
+    },
+    {
+      $unwind: {
+        path: "$specialists",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$employeeName" },
+        type: { $first: "$employeeType" },
+        email: { $first: "$employeeEmail" },
+        hopital: { $first: "$hospitals.hospitalName" },
+        identification: { $first: "$employeeIdentification" },
+        specialist: { $addToSet: "$specialists.Specialist_Name" },
+        role: { $addToSet: "$decentralizes.decentralize_name" },
+        phone: { $first: "$employeePhone" },
+        address: { $first: "$employeeAddress" },
+        birthday: { $first: "$employeeBirthday" },
+        practicingCertificateId: { $first: "$PracticingCertificateID" },
+        practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
+        salary: { $first: "$ employeeSalary" },
+        startWorking: { $first: "$ employeeStartWorking" },
+        status: { $first: "$employeeStatus" },
+        experience: { $first: "$employeeExperience" },
+        certificateCreateAt: { $first: "$certificateCreateAt" },
+        PracticingCertificateAdress: { $first: "$certificateCreateAt" },
+        gender: { $first: "$employeeGender" }
+      }
+    },
+    {
+      $skip: Number(pageSize * (page - 1)),
+    },
+    {
+      $limit: Number(pageSize)
+    },
+    {
+      $sort: {
+        name: Number(sort),
+      },
+    }
+  ])
+
+  return res.status(StatusCodes.OK)
+    .json({
+      data: {
+        content: list_employee,
+        page: page,
+        size: pageSize,
+        total_record: list_employee.length,
+        total_page: parseInt(list_employee.length / pageSize + 1),
+      },
+      message: "success"
+    })
+
+}
 
 exports.editProfile = async (req, res) => {
   try {
