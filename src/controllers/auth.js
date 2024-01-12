@@ -48,20 +48,21 @@ exports.Register = async (req, res) => {
   if (!checkPhone) {
     throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
   }
-  console.log("decentralize", decentralize);
-  decentralize = decentralize.split(",").map(Number)
-  console.log("decentralize1", decentralize);
+
+  // decentralize = decentralize.split(",").map(Number);
   const check_decentralize = await Decentralize.find({
     _id: { $in: decentralize },
   });
+
   if (check_decentralize.length != decentralize.length) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
   }
 
-  specialist = specialist.split(",").map(Number)
+  // specialist = specialist.split(",").map(Number)
   const check_specialist = await Specialist.find({
     _id: { $in: specialist },
   });
+
   if (check_specialist.length != specialist.length) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "id specialist is not valid");
   }
@@ -235,6 +236,7 @@ exports.login = async (req, res) => {
       let data = {
         _id: findUser._id,
         name: findUser.employeeName,
+        hospital_id: findUser.hopitalID,
         accountType: findUser.employeeType,
         identification: findUser.employeeIdentification,
         phone: findUser.employeePhone,
@@ -322,7 +324,6 @@ exports.getInfoPerson = async (req, res) => {
 
     const user_id = req.query.id;
     const acc_type = req.query.acc_type;
-    console.log((isNaN(user_id) && user_id != ""))
 
     if (
       (isNaN(user_id) && user_id != "") ||
@@ -712,6 +713,7 @@ exports.getListHospital = async (req, res) => {
 
 exports.getListEmployee = async (req, res) => {
   const user_login = req.user.data;
+
   const employee_name = req.query.hospital_name || "";
   const email = req.query.email || "";
   const page = req.query.page || 1;

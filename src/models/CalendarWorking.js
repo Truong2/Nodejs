@@ -1,147 +1,27 @@
 const mongoose = require("mongoose");
 const CalendarWorking = new mongoose.Schema({
     _id: {
-        type: Number
+        type: Number,
+        required: true
     },
     userId: {
-        type: Number
+        type: Number,
+        required: true
     },
     hospitalId: {
-        type: Number
+        type: Number,
+        required: true
     },
-    carlendarWorking_week: {
-        type: {
-            week: {
-                type: Number,
-                require: true,
-
-            },
-            year: {
-                type: Number,
-                require: true,
-            },
-            t2: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    }, 
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t3: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t4: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t5: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t6: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t7: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }],
-            t8: [{
-                type: {
-                    time_start: {
-                        type: Number
-                    },
-                    time_end: {
-                        type: Number
-                    },
-                    Current_patient: {
-                        type: Number
-                    },
-                    Max_patient: {
-                        type: Number
-                    },
-                    default: null
-                }
-            }]
-        }
-    }
-
+    date: {
+        type: Number,//dvi sencond
+        required: true
+    },
+    time_working: [{
+        type: Number,
+        ref: 'TimeWorking'
+    }]
+}, {
+    versionKey: false
 });
 
 module.exports = mongoose.model("CalendarWorking", CalendarWorking);

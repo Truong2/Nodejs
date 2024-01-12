@@ -5,21 +5,24 @@ const TypeService = new mongoose.Schema({
         require: true,
     },
     serviceName: {
+        type: String,
+        require: true,
+    },
+    createAt: {
+        type: Date,
+        default: new Date()
+    },
+    userCreate: {
+        type: Number
+    },
+    status: {
         type: Number,
+        default : 1
     },
-    serviceCreateAt: {
+    AcceptAt: {
         type: Date
     },
-    service_userCreate: {
-        type: Number
-    },
-    serviceStatus: {
-        type: Number
-    },
-    service_AcceptAt: {
-        type: Date
-    },
-    service_userAccept: {
+    userAccept: {
         type: Number
     }
 })
