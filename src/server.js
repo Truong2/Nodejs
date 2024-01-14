@@ -3,24 +3,16 @@ const cors = require("cors");
 const fs = require('fs')
 const path = require('path')
 const mongoose = require("mongoose");
+const morgan = require('morgan')
 require("express-async-errors");
-
 require("dotenv").config();
+
 const app = express();
-
-app.use(cors());
-
-
-
-
 const port = process.env.APP_PORT;
 
 app.use(express.raw());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Xử lý error
-
-var morgan = require('morgan')
 app.use(morgan('short'))
 
 
@@ -44,4 +36,8 @@ app.listen(port, process.env.APP_HOST, () => {
 
 app.listen(port, process.env.IPADDRESS, () => {
   console.log(`Server is running on http://${process.env.IPADDRESS}:${port}`);
+});
+
+app.listen(port, '127.0.0.1', () => {
+  console.log(`Server is running on http://${"127.0.0.1"}:${port}`);
 });
