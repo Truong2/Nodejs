@@ -46,12 +46,13 @@ exports.Register = async (req, res) => {
   if (!checkPhone) {
     throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
   }
-
-  const check_decentralize = await Decentralize.find({
-    _id: { $in: decentralize },
-  });
-  if (check_decentralize.length != decentralize.length) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
+  if (decentralize) {
+    const check_decentralize = await Decentralize.find({
+      _id: { $in: decentralize },
+    });
+    if (check_decentralize.length != decentralize.length) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
+    }
   }
 
   if (userType == 0) {
@@ -69,7 +70,7 @@ exports.Register = async (req, res) => {
       Admin_name: userName,
       Admin_email: userEmail.toLowerCase(),
       Admin_password: userPassword,
-      Admin_Dsecentralize: decentralize,
+      Admin_Dsecentralize: decentralize ? decentralize : null,
       CreateAt: new Date(),
     });
     await new_Admin
@@ -100,7 +101,7 @@ exports.Register = async (req, res) => {
       employeeBirthday: userBirthday,
       employeeGender: userGender,
       hopitalID: hopitalID,
-      employee_Dsecentralize: decentralize,
+      employee_Dsecentralize: decentralize ? decentralize : null,
       CreateAt: new Date(),
     });
 
@@ -123,7 +124,7 @@ exports.Register = async (req, res) => {
       hospitalEmail: userEmail.toLowerCase(),
       hospitalPassword: userPassword,
       hospitalPhone: userPhoneNumber,
-      hospitalDsecentralize: decentralize,
+      hospitalDsecentralize: decentralize ? decentralize : null,
       CreateAt: new Date(),
     });
 
@@ -155,7 +156,7 @@ exports.Register = async (req, res) => {
       Customer_email: userEmail.toLowerCase(),
       Cutomer_password: userPassword,
       Customer_phoneNumber: userPhoneNumber,
-      Customer_Dsecentralize: decentralize,
+      Customer_Dsecentralize: decentralize ? decentralize : null,
       CreateAt: new Date(),
     });
 

@@ -91,6 +91,7 @@ exports.create_calendar_working_serviece = async (req, res) => {
       date: time,
       time_working: time_working
     })
+
     await new_schedule.save()
       .then(() => {
         return res.status(StatusCodes.OK).json({ message: "create new time working success" })
@@ -152,7 +153,6 @@ exports.get_list_calendar_working_serviece = async (req, res) => {
     }
   ]
   )
-
 
   return res.status(StatusCodes.OK)
     .json({
