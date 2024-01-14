@@ -23,7 +23,6 @@ exports.Register = async (req, res) => {
     decentralize,
     userGender, //1-nam ,2-nữ
     hopitalID,
-    specialist
   } = req.body;
 
   userPassword = await bcrypt.hash(userPassword, 10);
@@ -33,8 +32,7 @@ exports.Register = async (req, res) => {
     userType === null ||
     userType === "" ||
     !userEmail ||
-    !userPassword ||
-    typeof (Number(userType)) == 'string'
+    !userPassword
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "input is not valid");
   }
@@ -49,22 +47,11 @@ exports.Register = async (req, res) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
   }
 
-  // decentralize = decentralize.split(",").map(Number);
   const check_decentralize = await Decentralize.find({
     _id: { $in: decentralize },
   });
-
   if (check_decentralize.length != decentralize.length) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
-  }
-
-  // specialist = specialist.split(",").map(Number)
-  const check_specialist = await Specialist.find({
-    _id: { $in: specialist },
-  });
-
-  if (check_specialist.length != specialist.length) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "id specialist is not valid");
   }
 
   if (userType == 0) {
@@ -113,8 +100,7 @@ exports.Register = async (req, res) => {
       employeeBirthday: userBirthday,
       employeeGender: userGender,
       hopitalID: hopitalID,
-      employee_Decentralize: decentralize,
-      SpecialistID: specialist,
+      employee_Dsecentralize: decentralize,
       CreateAt: new Date(),
     });
 
@@ -138,7 +124,6 @@ exports.Register = async (req, res) => {
       hospitalPassword: userPassword,
       hospitalPhone: userPhoneNumber,
       hospitalDsecentralize: decentralize,
-      Specialist_ID: specialist,
       CreateAt: new Date(),
     });
 
@@ -150,11 +135,19 @@ exports.Register = async (req, res) => {
     let checkExits = await Customer.exists({
       Customer_email: userEmail.toLowerCase(),
     });
-
     if (checkExits) {
       throw new Error(StatusCodes.BAD_REQUEST, "email already used");
     }
     let maxId_cus = await func.maxID(Customer);
+    let maxId_role = await func.maxID(Role);
+
+    const role_hos = new Role({
+      _id: maxId_role + 1,
+      user_id: maxId_cus + 1,
+      role_customer: 1,
+      account_type: 4,
+    });
+    await role_hos.save();
 
     const new_Customer = new Customer({
       _id: maxId_cus + 1,
@@ -182,8 +175,7 @@ exports.login = async (req, res) => {
       password,
       userType, //0-admin 1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách hàng
     } = req.body;
-    console.log(email);
-    console.log(password);
+
     if (typeof Number(userType) !== "number" || !email || !password) {
       return res.status(404).json({ message: "input is not valid" });
     }
@@ -321,6 +313,7 @@ exports.login = async (req, res) => {
 exports.getInfoPerson = async (req, res) => {
   try {
     let { _id, accountType } = req.user.data;
+
 
     const user_id = req.query.id;
     const acc_type = req.query.acc_type;
