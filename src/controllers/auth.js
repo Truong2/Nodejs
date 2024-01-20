@@ -48,7 +48,6 @@ exports.Register = async (req, res) => {
       throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
     }
   }
-
   if (decentralize) {
     const check_decentralize = await Decentralize.find({
       _id: { $in: decentralize },
