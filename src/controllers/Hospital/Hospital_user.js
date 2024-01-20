@@ -7,12 +7,12 @@ exports.addSpecialist = async (req, res) => {
     const data = req.user.data;
 
     if (data.accountType !== 3 && data.accountType !== 0) {
-      return res.status(401).send({ message: "Function is not valid" });
+      return res.status(400).send({ message: "Function is not valid", statusCode: 400 });
     }
 
     const check_specialize = await Specialist.find({ _id: { $in: specialist } })
     if (check_specialize.length !== specialist.length) {
-      return res.status(404).send({ message: "specialist is not valid" });
+      return res.status(400).send({ message: "specialist is not valid", statusCode: 400 });
     }
 
     const hospital = await Hospital.findOne({ _id: data._id });
@@ -31,11 +31,11 @@ exports.addSpecialist = async (req, res) => {
       {
         Specialist_ID: list_specialist
       })
-      .then(() => { return res.status(200).json({ message: "success" }) })
-      .catch((err) => { return res.status(500).json({ message: err }) })
+      .then(() => { return res.status(200).json({ message: "success" , statusCode: 200}) })
+      .catch((err) => { return res.status(500).json({ message: err, statusCode: 500 }) })
 
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }

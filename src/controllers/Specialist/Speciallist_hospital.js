@@ -10,7 +10,7 @@ exports.request_add_sepcial = async (req, res) => {
         const data = req.user;
 
         if (data.accountType !== 3) {
-            return res.status(404).json({ message: "function is not valid" })
+            return res.status(404).json({ message: "function is not valid", statusCode: 400 })
         }
 
         const maxID_Specialist = await func.maxID(Specialist)
@@ -25,7 +25,7 @@ exports.request_add_sepcial = async (req, res) => {
         new_sepciallist.save()
     } catch (err) {
         console.log("err: ", err)
-        return res.status(500).json({ message: err.message })
+        return res.status(500).json({ message: err.message, statusCode: 500 })
     }
 
 }

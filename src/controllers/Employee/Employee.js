@@ -15,10 +15,10 @@ exports.create_time_working_service = async (req, res) => {
   })
   await new_time_working.save()
     .then(() => {
-      return res.status(StatusCodes.OK).json({ message: "success" })
+      return res.status(StatusCodes.OK).json({ message: "success", statusCode: 200 })
     })
     .catch(err => {
-      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail" })
+      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail", statusCode: StatusCodes.UNPROCESSABLE_ENTITY })
     })
 }
 
@@ -31,7 +31,7 @@ exports.get_list_time_working_service = async (req, res) => {
         content: list_time_working,
         total_record: list_time_working.length,
       },
-      message: "success"
+      message: "success", statusCode: 200
     })
 }
 
@@ -43,17 +43,17 @@ exports.create_calendar_working_serviece = async (req, res) => {
   const user_login = req.user.data;
 
   if (user_login.accountType !== 1) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid" })
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid", statusCode: StatusCodes.UNAUTHORIZED })
   }
 
   if (isNaN(date) || date <= 0) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "date is not valid " })
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "date is not valid ", statusCode: StatusCodes.BAD_REQUEST })
   }
   //2024-01-11T21:44:17.597Z
 
   const check_time_working = await TimeWorking.find({ _id: { $in: time_working.map(Number) } })
   if (check_time_working.length !== time_working.length) {
-    return res.status(StatusCodes.PRECONDITION_FAILED).json({ message: "time working is not valid" })
+    return res.status(StatusCodes.PRECONDITION_FAILED).json({ message: "time working is not valid", statusCode: StatusCodes.PRECONDITION_FAILED })
   }
 
   const time = dayjs(new Date(date)).startOf('D').unix() * 1000;
@@ -75,10 +75,10 @@ exports.create_calendar_working_serviece = async (req, res) => {
       time_working: time_working
     })
       .then(() => {
-        return res.status(StatusCodes.OK).json({ message: "create new time working success" })
+        return res.status(StatusCodes.OK).json({ message: "create new time working success", statusCode: 200 })
       })
       .catch(err => {
-        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail" })
+        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail", statusCode: StatusCodes.UNPROCESSABLE_ENTITY })
       })
 
   } else {
@@ -94,10 +94,10 @@ exports.create_calendar_working_serviece = async (req, res) => {
 
     await new_schedule.save()
       .then(() => {
-        return res.status(StatusCodes.OK).json({ message: "create new time working success" })
+        return res.status(StatusCodes.OK).json({ message: "create new time working success", statusCode: 200 })
       })
       .catch(err => {
-        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail" })
+        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail", statusCode: StatusCodes.UNPROCESSABLE_ENTITY })
       })
   }
 }
@@ -110,7 +110,7 @@ exports.get_list_calendar_working_serviece = async (req, res) => {
   const user_login = req.user.data;
 
   if (user_login.accountType !== 1) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid" })
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid", statusCode: StatusCodes.UNAUTHORIZED })
   }
 
   const list_calendar = await CalendarWorking.aggregate([
@@ -161,6 +161,6 @@ exports.get_list_calendar_working_serviece = async (req, res) => {
         total_record: list_calendar.length,
 
       },
-      message: "success"
+      message: "success", statusCode: 200
     })
 }

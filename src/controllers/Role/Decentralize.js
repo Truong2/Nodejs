@@ -12,17 +12,17 @@ exports.createRole = async (req, res) => {
     } = req.body;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
     if (!name_role && decentralize_role.length === 0) {
-      return res.status(200).json({ message: "bad request" });
+      return res.status(400).json({ message: "bad request", statusCode: 400 });
     }
 
     const check_list_role = await RoleUser.find({
       _id: { $in: decentralize_role },
     });
     if (check_list_role.length !== decentralize_role.length) {
-      return res.status(200).json({ message: "list role is not valid" });
+      return res.status(400).json({ message: "list role is not valid", statusCode: 400 });
     }
 
     const maxId_role = await functions.maxID(Decentralize);
@@ -38,14 +38,14 @@ exports.createRole = async (req, res) => {
       .save()
 
       .then(() => {
-        return res.status(200).json({ message: "add role success" });
+        return res.status(200).json({ message: "add role success", statusCode: 200 });
       })
       .catch((err) => {
-        return res.status(500).json({ message: err });
+        return res.status(500).json({ message: err, statusCode: 500 });
       });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
@@ -56,22 +56,22 @@ exports.updateDecentralize = async (req, res) => {
 
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
     if ((!name_role && decentralize_role.length === 0) || !decentralize_id) {
-      return res.status(200).json({ message: "bad request" });
+      return res.status(400).json({ message: "bad request", statusCode: 400 });
     }
 
     const check_list_role = await RoleUser.find({
       _id: { $in: decentralize_role },
     });
     if (check_list_role.length !== decentralize_role.length) {
-      return res.status(400).json({ message: "list role is not valid" });
+      return res.status(400).json({ message: "list role is not valid", statusCode: 400 });
     }
 
     const check_exists = await Decentralize.exists({ _id: decentralize_id });
     if (!check_exists) {
-      return res.status(400).json({ message: "dencetrale is not exists" });
+      return res.status(400).json({ message: "dencetrale is not exists", statusCode: 400 });
     }
 
     await Decentralize.findOneAndUpdate(
@@ -84,14 +84,14 @@ exports.updateDecentralize = async (req, res) => {
       }
     )
       .then(() => {
-        return res.status(200).json({ message: "update role success" });
+        return res.status(200).json({ message: "update role success", statusCode: 200 });
       })
       .catch((err) => {
-        return res.status(500).json({ message: err });
+        return res.status(500).json({ message: err, statusCode: 500 });
       });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
@@ -101,27 +101,27 @@ exports.deletedentralize = async (req, res) => {
     const accountType = req.user.data.accountType;
 
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
     if (!decentralize_id || typeof Number(decentralize_id) !== "number") {
-      return res.status(400).json({ message: "bad request" });
+      return res.status(400).json({ message: "bad request", statusCode: 400 });
     }
 
     const check_exists = await Decentralize.exists({ _id: decentralize_id });
     if (!check_exists) {
-      return res.status(404).json({ message: "Decentralize is not exists" });
+      return res.status(400).json({ message: "Decentralize is not exists", statusCode: 400 });
     }
 
     await Decentralize.findOneAndDelete({ _id: decentralize_id })
       .then(() => {
-        return res.status(200).json({ message: "delete decentralize success" });
+        return res.status(200).json({ message: "delete decentralize success", statusCode: 200 });
       })
       .catch((err) => {
-        return res.status(400).json({ message: err.message });
+        return res.status(500).json({ message: err.message, statusCode: 500 });
       });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
@@ -130,7 +130,7 @@ exports.listDecentralize = async (req, res) => {
     const { name } = req.query;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
 
     const regexName = name ? String(name) : "";
@@ -166,11 +166,12 @@ exports.listDecentralize = async (req, res) => {
     ]);
     return res.status(200).json({
       data: list_decentralize,
-      message: "get list  decentralize success",
+      message: "get list  decentralize success"
+      , statusCode: 200
     });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
@@ -179,7 +180,7 @@ exports.detailDecentralizes = async (req, res) => {
     let decentralize_id = req.params.decentralize_id;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
     const list_decentralize = await Decentralize.aggregate([
       {
@@ -208,10 +209,11 @@ exports.detailDecentralizes = async (req, res) => {
     ]);
     return res.status(200).json({
       data: list_decentralize,
-      message: "get list decentralize success",
+      message: "get list decentralize success"
+      , statusCode: 200
     });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };

@@ -42,10 +42,13 @@ exports.Register = async (req, res) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "email is not valid");
   }
 
-  let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
-  if (!checkPhone) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
+  if (userPhoneNumber) {
+    let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
+    if (!checkPhone) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
+    }
   }
+
   if (decentralize) {
     const check_decentralize = await Decentralize.find({
       _id: { $in: decentralize },
@@ -75,8 +78,8 @@ exports.Register = async (req, res) => {
     });
     await new_Admin
       .save()
-      .then(() => res.status(200).json({ message: "add admin success" }))
-      .catch((err) => res.status(400).json({ message: err.message }));
+      .then(() => res.status(200).json({ message: "add admin success", statusCode: 200 }))
+      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
   } else if (userType == 1 || userType == 2) {
     let checkExits = await Employee.exists({
       employeeEmail: userEmail.toLowerCase(),
@@ -107,14 +110,14 @@ exports.Register = async (req, res) => {
 
     await new_Employee
       .save()
-      .then(() => res.status(200).json({ message: "add employee success" }))
-      .catch((err) => res.status(400).json({ message: err.message }));
+      .then(() => res.status(200).json({ message: "add employee success", statusCode: 200 }))
+      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
   } else if (userType == 3) {
     let checkExits = await Hospital.exists({
       hospitalEmail: userEmail.toLowerCase(),
     });
     if (checkExits) {
-      return res.status(400).json({ message: "email already used" });
+      return res.status(400).json({ message: "email already used", statusCode: 400 });
     }
     let maxId_Hos = await func.maxID(Hospital);
 
@@ -130,8 +133,8 @@ exports.Register = async (req, res) => {
 
     await new_Hospital
       .save()
-      .then(() => res.status(200).json({ message: "add hospital success" }))
-      .catch((err) => res.status(400).json({ message: err.message }));
+      .then(() => res.status(200).json({ message: "add hospital success", statusCode: 200 }))
+      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
   } else if (userType == 4) {
     let checkExits = await Customer.exists({
       Customer_email: userEmail.toLowerCase(),
@@ -162,8 +165,8 @@ exports.Register = async (req, res) => {
 
     await new_Customer
       .save()
-      .then(() => res.status(200).json({ message: "add customer success" }))
-      .catch((err) => res.status(400).json({ message: err.message }));
+      .then(() => res.status(200).json({ message: "add customer success", statusCode: 200 }))
+      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
   } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "userType is not valid");
   }
@@ -178,7 +181,7 @@ exports.login = async (req, res) => {
     } = req.body;
 
     if (typeof Number(userType) !== "number" || !email || !password) {
-      return res.status(404).json({ message: "input is not valid" });
+      return res.status(404).json({ message: "input is not valid", statusCode: 400 });
     }
     //find by email and password
     //0-admin1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng
@@ -187,14 +190,14 @@ exports.login = async (req, res) => {
         Admin_email: email.toLowerCase(),
       });
       if (!findUser) {
-        return res.status(400).json({ message: "email  is not correct" });
+        return res.status(400).json({ message: "email  is not correct", statusCode: 400 });
       }
       let check_password = await bcrypt.compare(
         password,
         findUser.Admin_password
       );
       if (!check_password) {
-        return res.status(404).json({ message: "password is not valid" });
+        return res.status(404).json({ message: "password is not valid", statusCode: 400 });
       }
       let data = {
         _id: findUser._id,
@@ -211,20 +214,24 @@ exports.login = async (req, res) => {
       // let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
       res
         .status(200)
-        .json({ data: { token: token }, message: " admin login sucess" });
+        .json({
+          data: { token: token },
+          message: " admin login sucess",
+          statusCode: 200
+        });
     } else if (userType == 1 || userType == 2) {
       let findUser = await Employee.findOne({
         employeeEmail: email.toLowerCase(),
       });
       if (!findUser) {
-        return res.status(400).json({ message: "email  is not correct" });
+        return res.status(400).json({ message: "email  is not correct", statusCode: 400 });
       }
       let check_password = await bcrypt.compare(
         password,
         findUser.employeePassword
       );
       if (!check_password) {
-        return res.status(404).json({ message: "password is not valid" });
+        return res.status(400).json({ message: "password is not valid", statusCode: 400 });
       }
       let data = {
         _id: findUser._id,
@@ -242,20 +249,24 @@ exports.login = async (req, res) => {
       //  let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
       res
         .status(200)
-        .json({ data: { token: token }, message: " employee login sucess" });
+        .json({
+          data: { token: token },
+          message: " employee login sucess",
+          statusCode: 200
+        });
     } else if (userType == 3) {
       let findUser = await Hospital.findOne({
         hospitalEmail: email.toLowerCase(),
       });
       if (!findUser) {
-        return res.status(400).json({ message: "email is not correct" });
+        return res.status(400).json({ message: "email is not correct", statusCode: 400 });
       }
       let check_password = await bcrypt.compare(
         password,
         findUser.hospitalPassword
       );
       if (!check_password) {
-        return res.status(404).json({ message: "password is not valid" });
+        return res.status(404).json({ message: "password is not valid", statusCode: 400 });
       }
       let data = {
         _id: findUser._id,
@@ -273,7 +284,7 @@ exports.login = async (req, res) => {
       let role = await Role.findOne({ user_id: findUser._id, account_type: 3 });
       res
         .status(200)
-        .json({ data: { token: token }, message: " hospital login sucess" });
+        .json({ data: { token: token }, statusCode: 200, message: " hospital login sucess" });
     } else if (userType == 4) {
       let findUser = await Customer.findOne({
         Customer_email: email.toLowerCase(),
@@ -288,7 +299,7 @@ exports.login = async (req, res) => {
         findUser.Cutomer_password
       );
       if (!check_password) {
-        return res.status(404).json({ message: "password is not valid" });
+        return res.status(400).json({ message: "password is not valid", statusCode: 400 });
       }
       let data = {
         _id: findUser._id,
@@ -303,11 +314,11 @@ exports.login = async (req, res) => {
       let token = await func.createToken(data, "7d");
       res
         .status(200)
-        .json({ data: { token: token }, message: " custommeer login sucess" });
+        .json({ data: { token: token }, statusCode: 200, message: " custommeer login sucess" });
     }
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
@@ -324,7 +335,7 @@ exports.getInfoPerson = async (req, res) => {
       (isNaN(acc_type) && acc_type != "") ||
       ((isNaN(user_id) && user_id != "") && isNaN(parseInt(acc_type)))
     ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "input is not valid" })
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "input is not valid", statusCode: StatusCodes.BAD_REQUEST })
     } else if (user_id != "") {
       _id = Number(user_id);
       accountType = Number(acc_type)
@@ -363,11 +374,11 @@ exports.getInfoPerson = async (req, res) => {
         },
       ]);
       if (!info) {
-        return res.status(400).json({ message: "id user not exists" });
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
       }
       return res
         .status(200)
-        .json({ data: info[0], message: "get info admin sucess" });
+        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
 
     } else if (accountType == 1 || accountType == 2) {
       let info = await Employee.aggregate([
@@ -417,11 +428,11 @@ exports.getInfoPerson = async (req, res) => {
         },
       ]);
       if (!info) {
-        return res.status(400).json({ message: "id user not exists" });
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
       }
       return res
         .status(200)
-        .json({ data: info[0], message: "get info employee success" });
+        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
     } else if (accountType == 3) {
       let info = await Hospital.aggregate([
         {
@@ -471,11 +482,11 @@ exports.getInfoPerson = async (req, res) => {
         },
       ]);
       if (!info) {
-        return res.status(400).json({ message: "id user not exists" });
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
       }
       return res
         .status(200)
-        .json({ data: info[0], message: "get info Hospital success" });
+        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
     } else if (accountType == 4) {
       let info = await Customer.aggregate([
         {
@@ -525,20 +536,20 @@ exports.getInfoPerson = async (req, res) => {
         },
       ]);
       if (!info) {
-        return res.status(400).json({ message: "id user not exists" });
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
       }
       return res
         .status(200)
-        .json({ data: info[0], message: "get info customer success" });
+        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
     } else {
       return res
         .status(400)
-        .json({ message: "you don't have permission to access this page" });
+        .json({ message: "you don't have permission to access this page", statusCode: 400 });
     }
   } catch (err) {
     {
       console.log(err);
-      return res.status(500).json({ message: err.message });
+      return res.status(500).json({ message: err.message, statusCode: 500 });
     }
   }
 };
@@ -554,7 +565,7 @@ exports.getListAdmin = async (req, res) => {
     const code_role = req.query.code_role;
 
     if (accountType != 0) {
-      return res.status(400).json({ message: "function is not valid" });
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
     let list_admin = await Admin.aggregate([
       {
@@ -602,15 +613,25 @@ exports.getListAdmin = async (req, res) => {
       },
     ]);
 
+    total = await Admin.find(
+      {
+        $and: [
+          { Admin_email: { $regex: email?.toLowerCase() } },
+          { Admin_name: { $regex: name || "" } },
+        ],
+      }).count()
+
     return res.status(200).json({
       data: {
         content: list_admin,
         page: page,
         size: pageSize,
-        total_record: list_admin.length,
-        total_page: parseInt(list_admin.length / pageSize + 1),
+        pageSize: list_admin.length,
+        totalElement: total,
+        total_page: parseInt(total / pageSize + 1),
       },
       message: "OK",
+      statusCode: 200
     });
   } catch (err) {
     console.log(err);
@@ -690,6 +711,12 @@ exports.getListHospital = async (req, res) => {
       },
     }
   ])
+  total = await Hospital.find({
+    $and: [
+      { hospitalName: { $regex: hospital_name } },
+      { hospitalEmail: { $regex: email?.toLowerCase() } },
+    ]
+  }).count()
 
   return res.status(StatusCodes.OK)
     .json({
@@ -697,10 +724,13 @@ exports.getListHospital = async (req, res) => {
         content: list_hospital,
         page: page,
         size: pageSize,
-        total_record: list_hospital.length,
-        total_page: parseInt(list_hospital.length / pageSize + 1),
+        pageSize: list_hospital.length,
+        totalElement: total,
+        total_page: parseInt(total / pageSize + 1),
+
       },
-      message: "success"
+      message: "success",
+      statusCode: 200
     })
 
 }
@@ -715,7 +745,7 @@ exports.getListEmployee = async (req, res) => {
   const pageSize = req.query.pageSize || 10;
 
   if (user_login.accountType !== 0 && user_login.accountType !== 3) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Function is not valid" })
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Function is not valid", statusCode: StatusCodes.UNAUTHORIZED })
   }
 
   const condition = {}
@@ -811,6 +841,13 @@ exports.getListEmployee = async (req, res) => {
       },
     }
   ])
+  total = await Employee.find({
+    $and: [
+      { employeeName: { $regex: employee_name } },
+      { employeeEmail: { $regex: email?.toLowerCase() } },
+      condition
+    ]
+  }).count()
 
   return res.status(StatusCodes.OK)
     .json({
@@ -818,9 +855,11 @@ exports.getListEmployee = async (req, res) => {
         content: list_employee,
         page: page,
         size: pageSize,
-        total_record: list_employee.length,
-        total_page: parseInt(list_employee.length / pageSize + 1),
+        pagesize: list_employee.length,
+        totalElement: total,
+        total_page: parseInt(total / pageSize + 1),
       },
+      statusCode: 200,
       message: "success"
     })
 
@@ -845,3 +884,4 @@ exports.editProfile = async (req, res) => {
       .json({ data: info, message: "get info customer success" });
   }
 };
+

@@ -4,11 +4,11 @@ const functions = require("../../services/function")
 exports.getListTypeAccount = async (req, res) => {
   try {
     const data = ['Admin', 'Bác sĩ', 'Lễ tân', 'Cơ sở y tế', 'Khách hàng']
-    return res.status(200).json({ data: data, message: "success" })
+    return res.status(200).json({ data: data, message: "success", statusCode: 200 })
   }
   catch (err) {
     console.log(err)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
 
@@ -22,11 +22,11 @@ exports.createRoleUser = async (req, res) => {
 
     const accountType = req.user.data.accountType;
     if (accountType !== 0 && accountType !== 3) {
-      return res.status(404).json({ message: "function is not valid" })
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
     }
 
     if (!role_name || !code || !type_account) {
-      return res.status(400).json({ message: "Bad request" })
+      return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
     const maxID_roleUser = await functions.maxID(RoleUser)
 
@@ -38,10 +38,10 @@ exports.createRoleUser = async (req, res) => {
       role_parent: role_parent || null
     })
     await new_roleUser.save()
-    return res.status(200).json({ message: "Add role user sucess" })
+    return res.status(200).json({ message: "Add role user sucess", statusCode: 200 })
   } catch (err) {
     console.log(err)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
 
@@ -52,14 +52,14 @@ exports.EditRleUser = async (req, res) => {
     } = req.body;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" })
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
     }
     if (!role_name || !id) {
-      return res.status(404).json({ message: "Bad request" })
+      return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
     const check_exists = await RoleUser.exists({ _id: id })
     if (!check_exists) {
-      return res.status(404).json({ message: "Role is not exists" })
+      return res.status(400).json({ message: "Role is not exists", statusCode: 400 })
     }
     await RoleUser.findOneAndUpdate(
       { _id: id },
@@ -68,11 +68,11 @@ exports.EditRleUser = async (req, res) => {
         // role_code: code,
       }
     )
-    return res.status(200).json({ message: " update success" })
+    return res.status(200).json({ message: " update success", statusCode: 200 })
   }
   catch (err) {
     console.log(err)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
 
@@ -82,22 +82,22 @@ exports.deleteRoleUser = async (req, res) => {
     } = req.params;
     const accountType = req.user.data.accountType;
     if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid" })
+      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
     }
     if (!id) {
-      return res.status(404).json({ message: "Bad request" })
+      return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
     const check_exists = await RoleUser.exists({ _id: Number(id) })
     if (!check_exists) {
-      return res.status(404).json({ message: "Role is not exists" })
+      return res.status(400).json({ message: "Role is not exists", statusCode: 400 })
     }
     await RoleUser.findOneAndDelete(
       { _id: id }
     )
-    return res.status(200).json({ message: " delete success" })
+    return res.status(200).json({ message: " delete success", statusCode: 200 })
   } catch (err) {
     console.log(err.message)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
 
@@ -139,11 +139,11 @@ exports.getListRoleUser = async (req, res) => {
         }
       }
     ])
-    return res.status(200).json({ message: "success", data: data })
+    return res.status(200).json({ message: "success", data: data, statusCode: 200 })
   }
   catch (err) {
     console.log(err)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
 
@@ -151,10 +151,10 @@ exports.getListRoleUserChild = async (req, res) => {
   try {
     let id_group_role = req.params.id;
     let list_role_user = await RoleUser.find({ role_parent: Number(id_group_role) })
-    return res.status(200).json({ message: "success", data: list_role_user })
+    return res.status(200).json({ message: "success", data: list_role_user, statusCode: 200 })
   }
   catch (err) {
     console.log(err)
-    return res.status(500).json({ message: err.message })
+    return res.status(500).json({ message: err.message, statusCode: 500 })
   }
 }
