@@ -1,26 +1,38 @@
 const mongoose = require("mongoose");
 const Service = new mongoose.Schema({
     _id: {
+        type: Number,
+        require: true,
+        unique: true
+    },
+    serviceName: {
+        type: String,
+        require: true
+    },
+    serviceCost: {
         type: Number
     },
-    Hos_service_cost: {
-        type: Number
-    },
-    Hos_serviceCode: {
-        type: Number
-    },
-    Hos_service_userUsed: {
-        type: Number
+    service_userUsed: {//số người sử dụng
+        type: Number,
+        default: 0
     },
     HosId: {
-        type: Number
+        type: Number,
+        require: true
     },
-    SpeecialisID: {
+    SpecialistId: [{
         type: Number
-    },
-    Hos_serviceReview: {
-        type: Number
+    }],
+    type_service_code: [{
+        type: String,
+        require: true
+    }],
+    status: {
+        type: Number,
+        default: 1
     }
+}, {
+    versionKey: false
 });
 
 

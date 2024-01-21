@@ -121,7 +121,7 @@ exports.editHospital = async (req, res) => {
 			hopitalStatus: status
 		}).then(async () => {
 			// const list_hospital = await get_list_hospital("", null, null, null)
-			return res.status(200).json({ message: "update success" , statusCode: 200 });
+			return res.status(200).json({ message: "update success", statusCode: 200 });
 		})
 			.catch((err) => {
 				return res.status(500).json({ message: err.message, statusCode: 500 })
@@ -142,7 +142,6 @@ exports.grantRoleHospital = async (req, res) => {
 		if (data.accountType != 0) {
 			return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
 		}
-
 
 		const check_role = await Decentralizes.find({ _id: { $in: decentralize } })
 		if (decentralize.length !== check_role.length) {
@@ -182,7 +181,7 @@ exports.changeStatus = async (req, res) => {
 		if (!hospital) {
 			return res.status(400).json({ message: 'id hospital is not valid', statusCode: 400 })
 		}
-		console.log(hospital.hopitalStatus)
+
 		await Hospital.findOneAndUpdate({
 			_id: id
 		}, {
@@ -203,14 +202,13 @@ exports.changeStatus = async (req, res) => {
 
 exports.deleteHospital = async (req, res) => {
 	try {
-		let { list_id } = req.params;
+		let { list_id } = req.body;
 		const data = req.user.data;
-		console.log(list_id)
 
-		if (data.accountType != 0) {
-			return res.status(400).json({ message: "Function is not valid" , statusCode: 400})
-		}
-		list_id = JSON.parse(list_id)
+		// if (data.accountType != 0) {
+		// 	return res.status(400).json({ message: "Function is not valid" , statusCode: 400})
+		// }
+		// list_id = JSON.parse(list_id)
 		await Hospital.findOneAndDelete({ _id: { $in: list_id } })
 			.then(async () => {
 

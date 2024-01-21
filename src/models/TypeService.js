@@ -4,9 +4,15 @@ const TypeService = new mongoose.Schema({
         type: Number,
         require: true,
     },
+    serviceCode: {
+        type: String,
+        unique: true,
+        require: true
+    },
     serviceName: {
         type: String,
         require: true,
+        unique: true,
     },
     createAt: {
         type: Date,
@@ -17,14 +23,8 @@ const TypeService = new mongoose.Schema({
     },
     status: {
         type: Number,
-        default : 1
+        default: 1
     },
-    AcceptAt: {
-        type: Date
-    },
-    userAccept: {
-        type: Number
-    }
 })
 
 module.exports = mongoose.model("TypeService", TypeService);

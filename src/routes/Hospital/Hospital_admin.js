@@ -9,5 +9,5 @@ router.get('/get_list_hospital', func.checkToken, formData.parse(), hospital_ser
 router.put('/update_hospital', func.checkToken, formData.parse(), hospital_service.editHospital)
 router.put('/grant_role_hospital', func.checkToken, formData.parse(), hospital_service.grantRoleHospital)
 router.put('/change_status_hospital', func.checkToken, formData.parse(), hospital_service.changeStatus)
-router.delete('/delete_hospital/:list_id', func.checkToken, formData.parse(), hospital_service.deleteHospital)
+router.delete('/delete_hospital', func.checkToken, formData.parse(), hospital_service.deleteHospital)
 module.exports = router;
