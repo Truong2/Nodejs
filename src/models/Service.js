@@ -3,7 +3,6 @@ const Service = new mongoose.Schema({
     _id: {
         type: Number,
         require: true,
-        unique: true
     },
     serviceName: {
         type: String,
@@ -23,8 +22,8 @@ const Service = new mongoose.Schema({
     SpecialistId: [{
         type: Number
     }],
-    type_service_code: [{
-        type: String,
+    type_service: [{
+        type: Number,
         require: true
     }],
     status: {

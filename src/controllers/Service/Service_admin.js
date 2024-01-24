@@ -3,26 +3,14 @@ const Service = require('../../models/Service')
 const Hospital = require('../../models/Hospital')
 const func = require('../../services/function')
 const { StatusCodes } = require('http-status-codes')
+const { Types } = require('mongoose')
 
 
-
-const compareArrays = (arr1, arr2) => {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
-
-  const isEqual = arr1.every((value) => arr2.includes(value));
-  return isEqual
-
-}
-
-
-const get_list_service = async (req, name) => {
+const get_list_service = async (req) => {
   let serviceName = req.query.serviceName || "";
   const pageSize = req.body.pageSize || 10;
   const pageNum = req.body.pageNum || 1;
-  console.log(pageSize);
-  console.log(pageNum);
+
   const list_service = await TypeService.find(
     {
       serviceName: { $regex: serviceName }
@@ -30,7 +18,9 @@ const get_list_service = async (req, name) => {
     .skip(Number(pageSize * (pageNum - 1)))
     .limit(Number(pageSize))
 
-  return list_service
+  const total = await TypeService.find().count()
+
+  return { list_service, pageSize, pageNum, total }
 }
 
 exports.create_service = async (req, res) => {
@@ -46,7 +36,6 @@ exports.create_service = async (req, res) => {
   }
 
   const maxId_service = await func.maxID(TypeService)
-  console.log(maxId_service);
   const new_type_service = new TypeService({
     _id: maxId_service + 1,
     serviceCode: serviceCode,
@@ -57,12 +46,16 @@ exports.create_service = async (req, res) => {
 
   await new_type_service.save()
     .then(async () => {
-      const list_service = await get_list_service(req)
+      const { list_service, pageSize, pageNum, total } = await get_list_service(req)
       return res.status(StatusCodes.OK)
         .json({
           data: {
             content: list_service,
-            total_record: list_service.length,
+            page: pageNum,
+            size: pageSize,
+            pageSize: list_service.length,
+            totalElement: total,
+            total_page: parseInt(list_service.length / pageSize + 1),
           },
           message: "create service success",
           statusCode: 200
@@ -78,101 +71,118 @@ exports.create_service = async (req, res) => {
 }
 
 exports.get_list_sevice_service = async (req, res) => {
-  const page = req.query.page || 1;
-  const pageSize = req.query.pageSize || 10;
-  const list_service = await get_list_service(req)
+
+  const { list_service, pageSize, pageNum, total } = await get_list_service(req)
 
   return res.status(StatusCodes.OK)
     .json({
       data: {
         content: list_service,
-        page: page,
+        page: pageNum,
         size: pageSize,
-        total_record: list_service.length,
+        pageSize: list_service.length,
+        totalElement: total,
         total_page: parseInt(list_service.length / pageSize + 1),
       },
-      message: "success", statusCode: 200
+      message: "success",
+      statusCode: 200
     })
-}
-
-
-exports.add_service_service = async (req, res) => {
-  const { serviceName, serviceCost, HosId, SpecialistId, type_service } = req.body;
-
-  const user_login = req.user.data;
-
-  if (!serviceName || isNaN(serviceCost) || Number(serviceCost) <= 0 || type_service.length <= 0) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "bad request", statusCode: StatusCodes.BAD_REQUEST })
-  }
-
-  if (user_login.accountType != 0 && user_login.accountType != 3) {
-    return res.status(401).json({ message: "truy cập không hợp lệ !", statusCode: 401 })
-  }
-  const hos_id = user_login.accountType == 0 ? HosId : user_login._id
-
-  if (!hos_id) {
-    return res.status(400).json({ message: "Không thể tìm thấy cơ sở y tế !", statusCode: 400 })
-  }
-
-  if (SpecialistId) {
-    check_exists_spec = await Hospital.findOne({
-      _id: hos_id
-    })
-
-    if (!compareArrays(SpecialistId, check_exists_spec.Specialist_ID)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy chuyên khoa của cơ sở y tế !", statusCode: StatusCodes.BAD_REQUEST })
-    }
-  }
-
-  const check_type_service = await TypeService.find({ serviceCode: { $in: type_service } })
-  if (check_type_service.length != type_service.length) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy loại dịch vụ !", statusCode: StatusCodes.BAD_REQUEST })
-  }
-
-  const maxId_service = await func.maxID(Service)
-
-  const new_service = new Service({
-    _id: maxId_service + 1,
-    serviceName: serviceName,
-    serviceCost: serviceCost,
-    HosId: hos_id,
-    SpecialistId: SpecialistId,
-    type_service_code: type_service,
-  })
-  await new_service.save()
-    .then(() => { return res.status(StatusCodes.OK).json({ message: "Đăng kí dịch vụ thành công.", statusCode: 200 }) })
-    .catch((err) => { return res.status(404).json({ message: err.message, statusCode: 404 }) })
-
 }
 
 exports.update_name_service_service = async (req, res) => {
-  const { service_id, serviceCost, serviceName } = req.body;
+  const { service_name } = req.body;
+  const service_id = req.params.service_id;
 
   const user_login = req.user.data;
-  if (!serviceName || !service_id) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "bad request", statusCode: StatusCodes.BAD_REQUEST })
+  if (user_login.accountType != 0) {
+    return res.status(StatusCodes.NON_AUTHORITATIVE_INFORMATION).json({ message: "Bad request !", statusCode: StatusCodes.NON_AUTHORITATIVE_INFORMATION })
   }
 
+  if (!service_id || isNaN(service_id) || Number(service_id) <= 0) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+  }
 
-  const service = await Service.findOne({
+  const service_type = await TypeService.exists({
     _id: service_id
   })
-  if (service) {
-    if ((user_login.accountType != 0 && user_login.accountType != 3) ||
-      (user_login.accountType != 3 && service.HosId != user_login._id)
-    ) {
-      return res.status(401).json({ message: "truy cập không hợp lệ !", statusCode: 401 })
-    }
 
-    await Service.findOneAndUpdate({
-      _id: service_id
-    }, {
-      serviceName: serviceName,
-      serviceCost: serviceCost
+  if (!service_type) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Không tìm thấy dịch vụ !",
+      statusCode: StatusCodes.BAD_REQUEST
     })
-      .then(() => { return res.status(StatusCodes.OK).json({ message: "Đăng kí dịch vụ thành công.", statusCode: 200 }) })
-      .catch((err) => { return res.status(404).json({ message: err.message, statusCode: 404 }) })
-  } else {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không thể tìm thấy dịch vụ !", statusCode: StatusCodes.BAD_REQUEST })
   }
+
+  await TypeService.findOneAndUpdate({
+    _id: Number(service_id)
+  }, {
+    serviceName: service_name
+  })
+    .then(async () => {
+      const { list_service, pageSize, pageNum, total } = await get_list_service(req)
+      return res.status(StatusCodes.OK).json({
+        data: {
+          content: list_service,
+          page: pageNum,
+          size: pageSize,
+          pageSize: list_service.length,
+          totalElement: total,
+          total_page: parseInt(list_service.length / pageSize + 1),
+        },
+        message: "Cập nhật thành công.",
+        statusCode: StatusCodes.OK
+      })
+    })
+    .catch(err => {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Cập nhật không thành công !", statusCode: StatusCodes.BAD_REQUEST
+      })
+    })
+}
+
+exports.delete_service_service = async (req, res) => {
+
+  const service_id = req.params.service_id;
+
+  const user_login = req.user.data;
+  if (user_login.accountType != 0) {
+    return res.status(StatusCodes.NON_AUTHORITATIVE_INFORMATION).json({ message: "Bad request !", statusCode: StatusCodes.NON_AUTHORITATIVE_INFORMATION })
+  }
+
+  if (!service_id || isNaN(service_id) || Number(service_id) <= 0) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+  }
+
+  const service_type = await TypeService.exists({
+    _id: service_id
+  })
+
+  if (!service_type) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Không tìm thấy dịch vụ !",
+      statusCode: StatusCodes.BAD_REQUEST
+    })
+  }
+
+  await TypeService.findOneAndDelete({ _id: service_id })
+    .then(async () => {
+      const { list_service, pageSize, pageNum, total } = await get_list_service(req)
+      return res.status(StatusCodes.OK).json({
+        data: {
+          content: list_service,
+          page: pageNum,
+          size: pageSize,
+          pageSize: list_service.length,
+          totalElement: total,
+          total_page: parseInt(list_service.length / pageSize + 1),
+        }, 
+        message: "Xóa loại thành công.",
+        statusCode: StatusCodes.OK
+      })
+    })
+    .catch(err => {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: "Xóa loại không thành công !", statusCode: StatusCodes.BAD_REQUEST
+      })
+    })
 }
