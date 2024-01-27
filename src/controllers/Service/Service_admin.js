@@ -175,7 +175,7 @@ exports.delete_service_service = async (req, res) => {
           pageSize: list_service.length,
           totalElement: total,
           total_page: parseInt(list_service.length / pageSize + 1),
-        }, 
+        },
         message: "Xóa loại thành công.",
         statusCode: StatusCodes.OK
       })
@@ -185,4 +185,118 @@ exports.delete_service_service = async (req, res) => {
         message: "Xóa loại không thành công !", statusCode: StatusCodes.BAD_REQUEST
       })
     })
+}
+
+exports.get_list_service_by_type_service = async (req, res) => {
+  const serviceName = req.query.serviceName || "";
+  const pageSize = req.body.pageSize || 10;
+  const pageNum = req.body.pageNum || 1;
+
+  const typeService_id = Number(req.query.typeService_id);
+  const specialist = Number(req.query.specialist);
+
+  if (!typeService_id && !specialist) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+  }
+
+  const list_service = await Service.aggregate([
+    {
+      $match: {
+        $and: [
+          { serviceName: { $regex: serviceName } },
+          {
+            $or: [
+              { SpecialistId: { $in: [specialist] } },
+              { type_service: { $in: [typeService_id] } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: "hospitals",
+        localField: "HosId",
+        foreignField: "_id",
+        as: "Hospital"
+      }
+    },
+    {
+      $unwind: {
+        path: "$Hospital",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "specialists",
+        localField: "SpecialistId",
+        foreignField: "_id",
+        as: "Specialist"
+      }
+    },
+    {
+      $unwind: {
+        path: "$Specialist",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "typeservices",
+        localField: "type_service",
+        foreignField: "_id",
+        as: "SeviceType"
+      }
+    },
+    {
+      $unwind: {
+        path: "$SeviceType",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$serviceName" },
+        cost: { $first: "$serviceCost" },
+        user_number: { $first: "$service_userUsed" },
+        hospital: { $first: "$Hospital.hospitalName" },
+        specialist: { $push: "$Specialist.Specialist_Name" },
+        serviceType: { $push: "$SeviceType.serviceName" },
+        status: { $first: "$status" }
+      }
+    },
+    {
+      $sort: {
+        name: 1
+      }
+    }
+  ])
+  const total = await Service.find({
+    $and: [
+      { serviceName: { $regex: serviceName } },
+      {
+        $or: [
+          { SpecialistId: { $in: [specialist] } },
+          { type_service: { $in: [typeService_id] } }
+        ]
+      }
+    ]
+
+  }).count()
+
+  return res.status(StatusCodes.OK).json({
+    data: {
+      content: list_service,
+      page: pageNum,
+      size: pageSize,
+      pageSize: list_service?.length,
+      totalElement: total,
+      total_page: parseInt(list_service?.length / pageSize + 1),
+    },
+    message: "success",
+    statusCode: 200
+  })
+
 }

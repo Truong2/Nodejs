@@ -4,18 +4,19 @@ const Specialist = require("../../models/Specialist")
 exports.addSpecialist = async (req, res) => {
   try {
     let { specialist } = req.body;
+    const hospital_id = req.params.hospital_id;
     const data = req.user.data;
 
     if (data.accountType !== 3 && data.accountType !== 0) {
-      return res.status(400).send({ message: "Function is not valid", statusCode: 400 });
+      return res.status(400).send({ message: "Truy cập không hợp lệ !", statusCode: 400 });
     }
 
     const check_specialize = await Specialist.find({ _id: { $in: specialist } })
     if (check_specialize.length !== specialist.length) {
-      return res.status(400).send({ message: "specialist is not valid", statusCode: 400 });
+      return res.status(400).send({ message: "Bad request !", statusCode: 400 });
     }
 
-    const hospital = await Hospital.findOne({ _id: data._id });
+    const hospital = await Hospital.findOne({ _id: hospital_id });
     const list_specialist = hospital.Specialist_ID;
 
     specialist = specialist.map((item) => {
@@ -31,7 +32,7 @@ exports.addSpecialist = async (req, res) => {
       {
         Specialist_ID: list_specialist
       })
-      .then(() => { return res.status(200).json({ message: "success" , statusCode: 200}) })
+      .then(() => { return res.status(200).json({ message: "success", statusCode: 200 }) })
       .catch((err) => { return res.status(500).json({ message: err, statusCode: 500 }) })
 
   } catch (err) {

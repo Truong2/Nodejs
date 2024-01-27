@@ -326,15 +326,16 @@ exports.getInfoPerson = async (req, res) => {
     let { _id, accountType } = req.user.data;
 
 
-    const user_id = req.query.id;
-    const acc_type = req.query.acc_type;
+    const user_id = Number(req.query.id);
+    const acc_type = Number(req.query.acc_type);
 
     if (
-      (isNaN(user_id) && user_id != "") ||
-      (isNaN(acc_type) && acc_type != "") ||
-      ((isNaN(user_id) && user_id != "") && isNaN(parseInt(acc_type)))
+      isNaN(user_id) ||
+      isNaN(acc_type) ||
+      Number(user_id) <= 0 ||
+      Number(acc_type) <= 0
     ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "input is not valid", statusCode: StatusCodes.BAD_REQUEST })
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
     } else if (user_id != "") {
       _id = Number(user_id);
       accountType = Number(acc_type)
@@ -742,6 +743,7 @@ exports.getListEmployee = async (req, res) => {
   const page = req.query.page || 1;
   const sort = req.query.sort || -1;
   const pageSize = req.query.pageSize || 10;
+  const typeAcc = req.query.typeAcc || null;
 
   if (user_login.accountType !== 0 && user_login.accountType !== 3) {
     return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Function is not valid", statusCode: StatusCodes.UNAUTHORIZED })
@@ -751,6 +753,9 @@ exports.getListEmployee = async (req, res) => {
   if (user_login.accountType == 3) {
     condition.hopitalID = user_login._id
   }
+  if (typeAcc) {
+    condition.employeeType = typeAcc
+  }
 
   const list_employee = await Employee.aggregate([
     {
@@ -758,6 +763,7 @@ exports.getListEmployee = async (req, res) => {
         $and: [
           { employeeName: { $regex: employee_name } },
           { employeeEmail: { $regex: email?.toLowerCase() } },
+          { employeeType: 1 },
           condition
         ]
       }
