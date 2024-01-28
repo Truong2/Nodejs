@@ -30,3 +30,10 @@ exports.request_add_sepcial = async (req, res) => {
 
 }
 
+exports.get_list_specialist = async (req, res) => {
+    const hos_id = Number(req.params.hos_id);
+    const list_specialist = await ListSpecialist.find({
+
+    })
+}
+

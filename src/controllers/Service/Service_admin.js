@@ -89,6 +89,53 @@ exports.get_list_sevice_service = async (req, res) => {
     })
 }
 
+exports.listSevice = async (req, res) => {
+  const serviceName = req.query.serviceName || "";
+  const pageSize = req.query.pageSize || 10;
+  const pageNum = req.query.pageNum || 1;
+  const hos_id = Number(req.query.hos_id);
+  const condition = {}
+  if (hos_id && isNaN(hos_id)) {
+    return res.status(400).json({
+      message: "Bad request !",
+      statusCode: 400
+    })
+  } else if (hos_id != 0) {
+    condition.HosId = hos_id
+  }
+
+  const list_service = await Service.find({
+    $and: [
+      { serviceName: { $regex: serviceName } },
+      condition
+    ]
+  })
+    .select("serviceName HosId")
+    .skip(Number(pageSize * (pageNum - 1)))
+    .limit(Number(pageSize))
+
+  const total = await Service.find({
+    $and: [
+      { serviceName: { $regex: serviceName } },
+      condition
+    ]
+  }).count()
+
+  return res.status(StatusCodes.OK)
+    .json({
+      data: {
+        content: list_service,
+        page: pageNum,
+        size: pageSize,
+        pageSize: list_service.length,
+        totalElement: total,
+        total_page: parseInt(list_service.length / pageSize + 1),
+      },
+      message: "success",
+      statusCode: 200
+    })
+}
+
 exports.update_name_service_service = async (req, res) => {
   const { service_name } = req.body;
   const service_id = req.params.service_id;
@@ -285,6 +332,7 @@ exports.get_list_service_by_type_service = async (req, res) => {
     ]
 
   }).count()
+  console.log("check");
 
   return res.status(StatusCodes.OK).json({
     data: {

@@ -329,17 +329,17 @@ exports.getInfoPerson = async (req, res) => {
     const user_id = Number(req.query.id);
     const acc_type = Number(req.query.acc_type);
 
-    if (
-      isNaN(user_id) ||
-      isNaN(acc_type) ||
-      Number(user_id) <= 0 ||
-      Number(acc_type) <= 0
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
-    } else if (user_id != "") {
-      _id = Number(user_id);
-      accountType = Number(acc_type)
-    }
+    // if (
+    //   isNaN(user_id) ||
+    //   isNaN(acc_type) ||
+    //   Number(user_id) <= 0 ||
+    //   Number(acc_type) <= 0
+    // ) {
+    //   return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+    // } else if (user_id != "") {
+    //   _id = Number(user_id);
+    //   accountType = Number(acc_type)
+    // }
 
     if (accountType == 0) {
       let info = await Admin.aggregate([
@@ -401,18 +401,29 @@ exports.getInfoPerson = async (req, res) => {
         {
           $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
         },
+        {
+          $lookup: {
+            from: "hospitals",
+            localField: "hopitalID",
+            foreignField: "_id",
+            as: "hospitals",
+          },
+        },
+        {
+          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
+        },
 
         {
           $group: {
             _id: "$_id",
             name: { $first: "$employeeName" },
-            roleusers: { $push: "$Decentralize.decentralize_name" },
+            // roleusers: { $push: "$Decentralize.decentralize_name" },
             email: { $first: "$employeeEmail" },
             phone: { $first: "$employeePhone" },
             address: { $first: "$employeeAddress" },
             birthday: { $first: "$employeeBirthday" },
             experience: { $first: "$employeeExperience" },
-            hopitalId: { $first: "$hopitalID" },
+            hopitalId: { $first: "$hospitals.hospitalName" },
             status: { $first: "$employeeStatus" },
             type_account: { $first: "$employeeType" },
             practicingCertificateId: { $first: "$PracticingCertificateID" },

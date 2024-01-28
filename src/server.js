@@ -14,7 +14,7 @@ app.use(express.raw());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('short'))
-
+// app.use(cors)
 
 // connect db
 mongoose

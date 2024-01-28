@@ -1,7 +1,12 @@
 const Hospital = require('../../models/Hospital')
 const Decentralizes = require('../../models/decentralize')
 
-const get_list_hospital = async (name, page, pageSize, sort) => {
+const get_list_hospital = async (req) => {
+	const name = req.query.name || "";
+	const page = req.query.page || 1;
+	const pageSize = req.query.pageSize || 10;
+	const sort = req.query.sort || -1;
+
 	const list = await Hospital.aggregate([
 		{
 			$match: {
@@ -10,8 +15,8 @@ const get_list_hospital = async (name, page, pageSize, sort) => {
 		},
 		{
 			$lookup: {
-				from: "listspecialists",
-				localField: 'role_parent',
+				from: "specialists",
+				localField: 'Specialist_ID',
 				foreignField: '_id',
 				as: "listspecialists"
 			}
@@ -31,7 +36,7 @@ const get_list_hospital = async (name, page, pageSize, sort) => {
 				_id: '$_id',
 				name: { $first: '$hospitalName' },
 				specialist: { $push: "$listspecialists" },
-				roles: { $push: "$decentralizes" },
+				// roles: { $push: "$decentralizes" },
 				email: { $first: '$hospitalEmail' },
 				identification: { $first: '$hospitalIdentification' },
 				phone: { $first: '$hospitalPhone' },
@@ -52,28 +57,31 @@ const get_list_hospital = async (name, page, pageSize, sort) => {
 		}
 	])
 
+	const total = await Hospital.find({
+		hospitalName: { $regex: `${name}` }
+	}).count()
+
 	return {
-		list_hospital: list,
-		page: page,
-		size: pageSize,
-		total_record: list.length,
-		total_page: parseInt(list.length / pageSize + 1),
+		list, page, pageSize, total
 	}
 }
 
 exports.getListHospital = async (req, res) => {
 	try {
-		const name = req.query.name;
-		const page = req.query.page || 1;
-		const pageSize = req.query.pageSize || 10;
-		const sort = req.query.sort || -1;
+		const { list, page, pageSize, total } = await get_list_hospital(req)
+		return res.status(200).json({
 
-		const data = req.user.data;
-		if (data.accountType != 0) {
-			return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
-		}
-		const list_hospital = await get_list_hospital(name, page, pageSize, sort)
-		return res.status(200).json({ message: "success", data: list_hospital, statusCode: 200 })
+			data: {
+				content: list,
+				page: page,
+				size: pageSize,
+				pageSize: list.length,
+				totalElement: total,
+				total_page: parseInt(total / pageSize + 1),
+			},
+			message: "success",
+			statusCode: 200
+		})
 
 	} catch (err) {
 		console.log(err)
@@ -120,8 +128,18 @@ exports.editHospital = async (req, res) => {
 			hos_UPracticingCertificateImg: UPracticingCertificateImg,
 			hopitalStatus: status
 		}).then(async () => {
-			// const list_hospital = await get_list_hospital("", null, null, null)
-			return res.status(200).json({ message: "update success", statusCode: 200 });
+			const { list, page, pageSize, total } = await get_list_hospital(req)
+			return res.status(200).json({
+				data: {
+					content: list,
+					page: page,
+					size: pageSize,
+					pageSize: list.length,
+					totalElement: total,
+					total_page: parseInt(total / pageSize + 1),
+				},
+				message: "update success", statusCode: 200
+			});
 		})
 			.catch((err) => {
 				return res.status(500).json({ message: err.message, statusCode: 500 })
@@ -158,8 +176,18 @@ exports.grantRoleHospital = async (req, res) => {
 			hospitalDsecentralize: decentralize
 		})
 			.then(async () => {
-				// const list_hospital = await get_list_hospital("")
-				return res.status(200).json({ message: "update success", statusCode: 200 });
+				const { list, page, pageSize, total } = await get_list_hospital(req)
+				return res.status(200).json({
+					data: {
+						content: list,
+						page: page,
+						size: pageSize,
+						pageSize: list.length,
+						totalElement: total,
+						total_page: parseInt(total / pageSize + 1),
+					},
+					message: "update success", statusCode: 200
+				});
 			})
 			.catch(err => { return res.status(500).json({ message: err.message, statusCode: 500 }) })
 
@@ -188,8 +216,19 @@ exports.changeStatus = async (req, res) => {
 			hopitalStatus: Number(hospital.hopitalStatus) == 1 ? 0 : 1
 		})
 			.then(async () => {
-				// const list_hospital = await get_list_hospital("")
-				return res.status(200).json({ message: "Cập nhật trạng thái thành công", statusCode: 200 });
+				const { list, page, pageSize, total } = await get_list_hospital(req)
+				return res.status(200).json({
+
+					data: {
+						content: list,
+						page: page,
+						size: pageSize,
+						pageSize: list.length,
+						totalElement: total,
+						total_page: parseInt(total / pageSize + 1),
+					},
+					message: "Cập nhật trạng thái thành công", statusCode: 200
+				});
 			})
 			.catch(err => { return res.status(500).json({ message: err.message, statusCode: 500 }) })
 
@@ -205,18 +244,65 @@ exports.deleteHospital = async (req, res) => {
 		let { list_id } = req.body;
 		const data = req.user.data;
 
-		// if (data.accountType != 0) {
-		// 	return res.status(400).json({ message: "Function is not valid" , statusCode: 400})
-		// }
+		if (data.accountType != 0) {
+			return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
+		}
 		// list_id = JSON.parse(list_id)
 		await Hospital.findOneAndDelete({ _id: { $in: list_id } })
 			.then(async () => {
+				const { list, page, pageSize, total } = await get_list_hospital(req)
+				return res.status(200).json({
 
-				return res.status(200).json({ message: "Xóa thành công", statusCode: 200 });
+					data: {
+						content: list,
+						page: page,
+						size: pageSize,
+						pageSize: list.length,
+						totalElement: total,
+						total_page: parseInt(total / pageSize + 1),
+					},
+					message: "Xóa thành công", statusCode: 200
+				});
 			})
 			.catch(err => { return res.status(500).json({ message: err.message, statusCode: 500 }) })
 	} catch (err) {
 		console.log(err)
 		return res.status(500).json({ message: err.message, statusCode: 500 })
 	}
+}
+
+exports.list_hospital = async (req, res) => {
+
+	const name = req.query.name || "";
+	const page = req.query.page || 1;
+	const pageSize = req.query.pageSize || 10;
+	const sort = req.query.sort || -1;
+
+	const list_hos = await Hospital.find({
+		hospitalName: { $regex: `${name}` }
+	}).select(
+		"hospitalName "
+	).sort({ name: Number(sort) })
+		.skip((Number(page) - 1) * Number(pageSize))
+		.limit(Number(pageSize))
+
+	const total = await Hospital.find({
+		hospitalName: { $regex: `${name}` }
+	}).count()
+
+	return res.status(200).json({
+		data: {
+			content: list_hos,
+			page: page,
+			size: pageSize,
+			pageSize: list_hos.length,
+			totalElement: total,
+			total_page: parseInt(total / pageSize + 1),
+		}
+		, message: "Success",
+		statusCode: 200
+	});
+
+
+
 }
