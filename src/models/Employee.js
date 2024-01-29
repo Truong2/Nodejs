@@ -73,7 +73,8 @@ const Employee = new mongoose.Schema({
         type: Number
     },
     employeeStartWorking: {
-        type: Date
+        type: Number,
+        default: new Date().getTime()
     },
     hopitalID: {
         type: Number,

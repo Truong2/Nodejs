@@ -6,8 +6,8 @@ const func = require("../services/function");
 
 router.post('/register', formdata.parse(), Auth.Register);
 router.post('/login', Auth.login);
-router.get('/profile', func.checkToken, Auth.getInfoPerson);
-router.get('/getInfoPerson/:userId', func.checkToken, Auth.getInfoPerson) // ohan quyen csyt vaf admin
+router.get('/profile', func.checkToken, Auth.InfoPerson);
+router.get('/getInfoPerson/:userId/:typeAcc', Auth.getInfoPerson)
 router.get('/getListAdmin', func.checkToken, Auth.getListAdmin)
 router.get('/get-list-hospital', func.checkToken, Auth.getListHospital)
 router.get('/get-list-employee', func.checkToken, Auth.getListEmployee)

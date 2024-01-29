@@ -321,25 +321,164 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.getInfoPerson = async (req, res) => {
+exports.InfoPerson = async (req, res) => {
   try {
     let { _id, accountType } = req.user.data;
 
+    if (accountType == 0) {
+      let info = await Admin.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$Admin_name" },
+            mail: { $first: "$Admin_email" },
+            status: { $first: "$status" },
+            area: { $first: "$Admin_area" },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
 
-    const user_id = Number(req.query.id);
-    const acc_type = Number(req.query.acc_type);
+    } else if (accountType == 1 || accountType == 2) {
+      let info = await Employee.aggregate([
+        {
+          $match: {
+            $and: [
+              { _id: Number(_id) },
+              { employeeType: accountType }
+            ]
+          },
+        },
+        {
+          $lookup: {
+            from: "hospitals",
+            localField: "hopitalID",
+            foreignField: "_id",
+            as: "hospitals",
+          },
+        },
+        {
+          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
+        },
 
-    // if (
-    //   isNaN(user_id) ||
-    //   isNaN(acc_type) ||
-    //   Number(user_id) <= 0 ||
-    //   Number(acc_type) <= 0
-    // ) {
-    //   return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
-    // } else if (user_id != "") {
-    //   _id = Number(user_id);
-    //   accountType = Number(acc_type)
-    // }
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$employeeName" },
+            email: { $first: "$employeeEmail" },
+            phone: { $first: "$employeePhone" },
+            address: { $first: "$employeeAddress" },
+            birthday: { $first: "$employeeBirthday" },
+            experience: { $first: "$employeeExperience" },
+            hopitalId: { $first: "$hospitals.hospitalName" },
+            status: { $first: "$employeeStatus" },
+            practicingCertificateId: { $first: "$PracticingCertificateID" },
+            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
+            startWorking: { $first: "$ employeeStartWorking" },
+            status: { $first: "$employeeStatus" },
+            gender: { $first: "$employeeGender" }
+          }
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
+    } else if (accountType == 3) {
+      let info = await Hospital.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$hospitalName" },
+            email: { $first: "$hospitalEmail" },
+            phone: { $first: "$hospitalPhone" },
+            address: { $first: "$hospitalAddress" },
+            status: { $first: "$hopitalStatus" },
+            hospitalIdentification: { $first: "$hospitalIdentification" },
+            CreateAt: { $first: "$CreateAt" },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
+    } else if (accountType == 4) {
+      let info = await Customer.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$Customer_name" },
+            email: { $first: "$Customer_email" },
+            phone: { $first: "$Customer_phoneNumber" },
+            address: { $first: "$Customer_address" },
+            status: { $first: "$hopitalStatus" },
+            Identification: { $first: "$Customer_Identification" },
+            gender: { $first: "$Customer_gender" },
+            birthday: { $first: "$Customer_birthday" },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
+    } else {
+      return res
+        .status(400)
+        .json({ message: "you don't have permission to access this page", statusCode: 400 });
+    }
+  } catch (err) {
+    {
+      console.log(err);
+      return res.status(500).json({ message: err.message, statusCode: 500 });
+    }
+  }
+};
+
+exports.getInfoPerson = async (req, res) => {
+
+  try {
+    const user_id = Number(req.params.userId);
+    const acc_type = Number(req.params.typeAcc);
+
+    if (
+      isNaN(user_id) ||
+      isNaN(acc_type) ||
+      (user_id) <= 0 ||
+      (acc_type) < 0 && acc_type > 4
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+    } else if (user_id != "") {
+      _id = Number(user_id);
+      accountType = Number(acc_type)
+    }
 
     if (accountType == 0) {
       let info = await Admin.aggregate([
@@ -368,7 +507,7 @@ exports.getInfoPerson = async (req, res) => {
             name: { $first: "$Admin_name" },
             mail: { $first: "$Admin_email" },
             roleusers: { $push: "$Decentralize.decentralize_name" },
-            type_account: { $first: accountType },
+            area: { $first: "$Admin_area" },
             status: { $first: "$status" },
           },
         },
@@ -417,7 +556,7 @@ exports.getInfoPerson = async (req, res) => {
           $group: {
             _id: "$_id",
             name: { $first: "$employeeName" },
-            // roleusers: { $push: "$Decentralize.decentralize_name" },
+            roleusers: { $push: "$Decentralize.decentralize_name" },
             email: { $first: "$employeeEmail" },
             phone: { $first: "$employeePhone" },
             address: { $first: "$employeeAddress" },
@@ -463,27 +602,10 @@ exports.getInfoPerson = async (req, res) => {
           $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
         },
         {
-          $unwind: {
-            path: "$Decentralize.decentralize_role", // Unwind the decentralize_role array
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "roleusers", // The collection to join with
-            localField: "Decentralize.decentralize_role",
-            foreignField: "_id",
-            as: "roleusers",
-          },
-        },
-        { $unwind: { path: "$roleusers", preserveNullAndEmptyArrays: true } },
-        {
           $group: {
             _id: "$_id",
             name: { $first: "$hospitalName" },
-            role: { $first: "$Decentralize.decentralize_name" },
-            role_id: { $first: "$Decentralize._id" },
-            roleusers: { $push: "$roleusers" },
+            role: { $push: "$Decentralize.decentralize_name" },
             email: { $first: "$hospitalEmail" },
             phone: { $first: "$hospitalPhone" },
             address: { $first: "$hospitalAddress" },
@@ -516,28 +638,12 @@ exports.getInfoPerson = async (req, res) => {
         {
           $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
         },
-        {
-          $unwind: {
-            path: "$Decentralize.decentralize_role", // Unwind the decentralize_role array
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "roleusers", // The collection to join with
-            localField: "Decentralize.decentralize_role",
-            foreignField: "_id",
-            as: "roleusers",
-          },
-        },
-        { $unwind: { path: "$roleusers", preserveNullAndEmptyArrays: true } },
+
         {
           $group: {
             _id: "$_id",
             name: { $first: "$Customer_name" },
-            role: { $first: "$Decentralize.decentralize_name" },
-            role_id: { $first: "$Decentralize._id" },
-            roleusers: { $push: "$roleusers" },
+            roleusers: { $first: "$Decentralize.decentralize_name" },
             email: { $first: "$Customer_email" },
             phone: { $first: "$Customer_phoneNumber" },
             address: { $first: "$Customer_address" },
@@ -563,7 +669,8 @@ exports.getInfoPerson = async (req, res) => {
       return res.status(500).json({ message: err.message, statusCode: 500 });
     }
   }
-};
+
+}
 
 exports.getListAdmin = async (req, res) => {
   try {
