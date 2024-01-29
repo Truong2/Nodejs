@@ -4,11 +4,15 @@ const Specialist = require("../../models/Specialist")
 exports.addSpecialist = async (req, res) => {
   try {
     let { specialist } = req.body;
-    const hospital_id = req.params.hospital_id;
+    const hospital_id = Number(req.params.hospital_id);
     const data = req.user.data;
+    console.log(hospital_id);
 
     if (data.accountType !== 3 && data.accountType !== 0) {
       return res.status(400).send({ message: "Truy cập không hợp lệ !", statusCode: 400 });
+    }
+    if (isNaN(hospital_id) || hospital_id <= 0) {
+      return res.status(400).send({ message: "Bad request !", statusCode: 400 });
     }
 
     const check_specialize = await Specialist.find({ _id: { $in: specialist } })
@@ -17,6 +21,10 @@ exports.addSpecialist = async (req, res) => {
     }
 
     const hospital = await Hospital.findOne({ _id: hospital_id });
+    if (!hospital) {
+      return res.status(400).send({ message: "Không tìm thấy cơ sở y tế !", statusCode: 400 });
+    }
+
     const list_specialist = hospital.Specialist_ID;
 
     specialist = specialist.map((item) => {
@@ -27,7 +35,7 @@ exports.addSpecialist = async (req, res) => {
 
     await Hospital.findOneAndUpdate(
       {
-        _id: data._id
+        _id: hospital_id
       },
       {
         Specialist_ID: list_specialist

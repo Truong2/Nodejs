@@ -11,10 +11,38 @@ const get_list_service = async (req) => {
   const pageSize = req.body.pageSize || 10;
   const pageNum = req.body.pageNum || 1;
 
-  const list_service = await TypeService.find(
+  const list_service = await TypeService.aggregate([
     {
-      serviceName: { $regex: serviceName }
-    })
+      $match: {
+        serviceName: { $regex: serviceName }
+      }
+    },
+    {
+      $lookup: {
+        from: "admins",
+        localField: 'userCreate',
+        foreignField: '_id',
+        as: "usercreate"
+      }
+    },
+    {
+      $unwind: {
+        path: "$usercreate",
+        preserveNullAndEmptyArrays: true
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        serviceCode: { $first: "$serviceCode" },
+        serviceName: { $first: "$serviceName" },
+        createAt: { $first: "$createAt" },
+        userCreate: { $first: "$usercreate.Admin_name" },
+        status: { $first: "$status" },
+      }
+    }
+  ]
+  )
     .skip(Number(pageSize * (pageNum - 1)))
     .limit(Number(pageSize))
 
@@ -24,15 +52,21 @@ const get_list_service = async (req) => {
 }
 
 exports.create_service = async (req, res) => {
-  const { serviceName, serviceCode } = req.body;
+  let { serviceName, serviceCode } = req.body;
   const user_login = req.user.data;
 
   if (!serviceName) {
-    return res.status(400).json({ message: "input is not valid", statusCode: 400 })
+    return res.status(400).json({ message: "Bad request !", statusCode: 400 })
+  }
+
+  serviceCode = serviceCode.trim()
+  const check_exist_code = await TypeService.find({ serviceCode: serviceCode })
+  if (check_exist_code) {
+    return res.status(400).json({ message: "Mã dịch vụ đã tồn tại !", statusCode: 400 })
   }
 
   if (user_login.accountType !== 0) {
-    return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
+    return res.status(400).json({ message: "Truy cập không hợp lệ !", statusCode: 401 })
   }
 
   const maxId_service = await func.maxID(TypeService)
@@ -57,15 +91,15 @@ exports.create_service = async (req, res) => {
             totalElement: total,
             total_page: parseInt(list_service.length / pageSize + 1),
           },
-          message: "create service success",
+          message: "Tạo dịch vụ thành công.",
           statusCode: 200
         })
     })
     .catch(async (err) => {
-      return res.status(400)
+      return res.status(500)
         .json({
           message: err.message,
-          statusCode: 400
+          statusCode: 500
         })
     })
 }
@@ -346,5 +380,9 @@ exports.get_list_service_by_type_service = async (req, res) => {
     message: "success",
     statusCode: 200
   })
+
+}
+
+exports.get_all_service = async (req, res) => {
 
 }

@@ -333,161 +333,6 @@ exports.InfoPerson = async (req, res) => {
           },
         },
         {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Admin_name" },
-            mail: { $first: "$Admin_email" },
-            status: { $first: "$status" },
-            area: { $first: "$Admin_area" },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
-
-    } else if (accountType == 1 || accountType == 2) {
-      let info = await Employee.aggregate([
-        {
-          $match: {
-            $and: [
-              { _id: Number(_id) },
-              { employeeType: accountType }
-            ]
-          },
-        },
-        {
-          $lookup: {
-            from: "hospitals",
-            localField: "hopitalID",
-            foreignField: "_id",
-            as: "hospitals",
-          },
-        },
-        {
-          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
-        },
-
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$employeeName" },
-            email: { $first: "$employeeEmail" },
-            phone: { $first: "$employeePhone" },
-            address: { $first: "$employeeAddress" },
-            birthday: { $first: "$employeeBirthday" },
-            experience: { $first: "$employeeExperience" },
-            hopitalId: { $first: "$hospitals.hospitalName" },
-            status: { $first: "$employeeStatus" },
-            practicingCertificateId: { $first: "$PracticingCertificateID" },
-            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
-            startWorking: { $first: "$ employeeStartWorking" },
-            status: { $first: "$employeeStatus" },
-            gender: { $first: "$employeeGender" }
-          }
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
-    } else if (accountType == 3) {
-      let info = await Hospital.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$hospitalName" },
-            email: { $first: "$hospitalEmail" },
-            phone: { $first: "$hospitalPhone" },
-            address: { $first: "$hospitalAddress" },
-            status: { $first: "$hopitalStatus" },
-            hospitalIdentification: { $first: "$hospitalIdentification" },
-            CreateAt: { $first: "$CreateAt" },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
-    } else if (accountType == 4) {
-      let info = await Customer.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Customer_name" },
-            email: { $first: "$Customer_email" },
-            phone: { $first: "$Customer_phoneNumber" },
-            address: { $first: "$Customer_address" },
-            status: { $first: "$hopitalStatus" },
-            Identification: { $first: "$Customer_Identification" },
-            gender: { $first: "$Customer_gender" },
-            birthday: { $first: "$Customer_birthday" },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
-    } else {
-      return res
-        .status(400)
-        .json({ message: "you don't have permission to access this page", statusCode: 400 });
-    }
-  } catch (err) {
-    {
-      console.log(err);
-      return res.status(500).json({ message: err.message, statusCode: 500 });
-    }
-  }
-};
-
-exports.getInfoPerson = async (req, res) => {
-
-  try {
-    const user_id = Number(req.params.userId);
-    const acc_type = Number(req.params.typeAcc);
-
-    if (
-      isNaN(user_id) ||
-      isNaN(acc_type) ||
-      (user_id) <= 0 ||
-      (acc_type) < 0 && acc_type > 4
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
-    } else if (user_id != "") {
-      _id = Number(user_id);
-      accountType = Number(acc_type)
-    }
-
-    if (accountType == 0) {
-      let info = await Admin.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
           $lookup: {
             from: "decentralizes",
             localField: "Admin_Dsecentralize",
@@ -669,7 +514,215 @@ exports.getInfoPerson = async (req, res) => {
       return res.status(500).json({ message: err.message, statusCode: 500 });
     }
   }
+};
 
+exports.getInfoPerson = async (req, res) => {
+
+  try {
+    const user_id = Number(req.params.userId);
+    const acc_type = Number(req.params.typeAcc);
+
+    if (
+      isNaN(user_id) ||
+      isNaN(acc_type) ||
+      (user_id) <= 0 ||
+      (acc_type) < 0 && acc_type > 4
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+    } else if (user_id != "") {
+      _id = Number(user_id);
+      accountType = Number(acc_type)
+    }
+
+    if (accountType == 0) {
+      let info = await Admin.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $lookup: {
+            from: "decentralizes",
+            localField: "Admin_Dsecentralize",
+            foreignField: "_id",
+            as: "Decentralize",
+          },
+        },
+        {
+          $unwind: {
+            path: "$Decentralize",
+            preserveNullAndEmptyArrays: true
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$Admin_name" },
+            mail: { $first: "$Admin_email" },
+            roleusers: { $push: "$Decentralize" },
+            area: { $first: "$Admin_area" },
+            status: { $first: "$status" },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
+
+    } else if (accountType == 1 || accountType == 2) {
+      let info = await Employee.aggregate([
+        {
+          $match: {
+            $and: [
+              { _id: Number(_id) },
+              { employeeType: accountType }
+            ]
+          },
+        },
+        {
+          $lookup: {
+            from: "decentralizes",
+            localField: "employee_Decentralize",
+            foreignField: "_id",
+            as: "Decentralize",
+          },
+        },
+        {
+          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $lookup: {
+            from: "hospitals",
+            localField: "hopitalID",
+            foreignField: "_id",
+            as: "hospitals",
+          },
+        },
+        {
+          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
+        },
+
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$employeeName" },
+            roleusers: { $push: "$Decentralize" },
+            email: { $first: "$employeeEmail" },
+            phone: { $first: "$employeePhone" },
+            address: { $first: "$employeeAddress" },
+            birthday: { $first: "$employeeBirthday" },
+            experience: { $first: "$employeeExperience" },
+            hopitalId: { $first: "$hospitals.hospitalName" },
+            status: { $first: "$employeeStatus" },
+            type_account: { $first: "$employeeType" },
+            practicingCertificateId: { $first: "$PracticingCertificateID" },
+            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
+            salary: { $first: "$ employeeSalary" },
+            startWorking: { $first: "$ employeeStartWorking" },
+            status: { $first: "$employeeStatus" },
+            experience: { $first: "$employeeExperience" },
+            certificateCreateAt: { $first: "$certificateCreateAt" },
+            PracticingCertificateAdress: { $first: "$certificateCreateAt" },
+            gender: { $first: "$employeeGender" }
+          }
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
+    } else if (accountType == 3) {
+      let info = await Hospital.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $lookup: {
+            from: "decentralizes",
+            localField: "hospitalDsecentralize",
+            foreignField: "_id",
+            as: "Decentralize",
+          },
+        },
+        {
+          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$hospitalName" },
+            role: { $push: "$Decentralize" },
+            email: { $first: "$hospitalEmail" },
+            phone: { $first: "$hospitalPhone" },
+            address: { $first: "$hospitalAddress" },
+            status: { $first: "$hopitalStatus" },
+            type_account: { $first: accountType },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
+    } else if (accountType == 4) {
+      let info = await Customer.aggregate([
+        {
+          $match: {
+            _id: _id,
+          },
+        },
+        {
+          $lookup: {
+            from: "decentralizes",
+            localField: "Customer_Dsecentralize",
+            foreignField: "_id",
+            as: "Decentralize",
+          },
+        },
+        {
+          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
+        },
+
+        {
+          $group: {
+            _id: "$_id",
+            name: { $first: "$Customer_name" },
+            roleusers: { $first: "$Decentralize" },
+            email: { $first: "$Customer_email" },
+            phone: { $first: "$Customer_phoneNumber" },
+            address: { $first: "$Customer_address" },
+            status: { $first: "$hopitalStatus" },
+            type_account: { $first: accountType },
+          },
+        },
+      ]);
+      if (!info) {
+        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
+      }
+      return res
+        .status(200)
+        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
+    } else {
+      return res
+        .status(400)
+        .json({ message: "you don't have permission to access this page", statusCode: 400 });
+    }
+  } catch (err) {
+    {
+      console.log(err);
+      return res.status(500).json({ message: err.message, statusCode: 500 });
+    }
+  }
 }
 
 exports.getListAdmin = async (req, res) => {
