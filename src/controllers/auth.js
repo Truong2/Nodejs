@@ -351,7 +351,7 @@ exports.InfoPerson = async (req, res) => {
             _id: "$_id",
             name: { $first: "$Admin_name" },
             mail: { $first: "$Admin_email" },
-            roleusers: { $push: "$Decentralize.decentralize_name" },
+            roleusers: { $push: "$Decentralize" },
             area: { $first: "$Admin_area" },
             status: { $first: "$status" },
           },
@@ -401,7 +401,7 @@ exports.InfoPerson = async (req, res) => {
           $group: {
             _id: "$_id",
             name: { $first: "$employeeName" },
-            roleusers: { $push: "$Decentralize.decentralize_name" },
+            roleusers: { $push: "$Decentralize" },
             email: { $first: "$employeeEmail" },
             phone: { $first: "$employeePhone" },
             address: { $first: "$employeeAddress" },
@@ -450,7 +450,7 @@ exports.InfoPerson = async (req, res) => {
           $group: {
             _id: "$_id",
             name: { $first: "$hospitalName" },
-            role: { $push: "$Decentralize.decentralize_name" },
+            role: { $push: "$Decentralize" },
             email: { $first: "$hospitalEmail" },
             phone: { $first: "$hospitalPhone" },
             address: { $first: "$hospitalAddress" },
@@ -488,7 +488,7 @@ exports.InfoPerson = async (req, res) => {
           $group: {
             _id: "$_id",
             name: { $first: "$Customer_name" },
-            roleusers: { $first: "$Decentralize.decentralize_name" },
+            roleusers: { $first: "$Decentralize" },
             email: { $first: "$Customer_email" },
             phone: { $first: "$Customer_phoneNumber" },
             address: { $first: "$Customer_address" },

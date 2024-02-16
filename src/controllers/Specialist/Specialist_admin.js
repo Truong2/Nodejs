@@ -14,8 +14,6 @@ exports.addSpeciaList_for_admin = async (req, res) => {
       _id: maxId_Specialist + 1,
       Specialist_Name: name,
       Specialist_userCreate_id: data._id,
-      Specialist_userCreate_name: data.name,
-      Specialist_userCreate_accountType: data.accountType,
     });
     await new_specialist
       .save()
