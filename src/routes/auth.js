@@ -4,7 +4,8 @@ const formdata = require("express-form-data");
 const Auth = require("../controllers/auth");
 const func = require("../services/function");
 
-router.post('/register', formdata.parse(), Auth.Register);
+router.post('/register', Auth.Register);
+router.post('/update-profile/:user_id', formdata.parse(), func.checkToken, Auth.editProfile);
 router.post('/login', Auth.login);
 router.get('/profile', func.checkToken, Auth.InfoPerson);
 router.get('/getInfoPerson/:userId', Auth.getInfoPerson)

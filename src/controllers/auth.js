@@ -64,6 +64,7 @@ exports.Register = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ message: "Chuyên khoa không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
       }
     }
+
     const user_id_max = await func.maxID(Users)
 
     const new_account = Users({
@@ -125,13 +126,14 @@ exports.login = async (req, res) => {
     let data = {
       _id: findUser._id,
       name: findUser.name,
-      accountType: 0,
+      accountType: findUser.type,
       createAt: findUser.createAt,
       decentralize: findUser.decentrialize,
       status: findUser.status,
       email: findUser.email,
+      hospitalId: findUser.hospitalId
     };
-    
+
     let token = await func.createToken(data, "7d");
 
     return res.status(200).json({
@@ -151,7 +153,6 @@ exports.InfoPerson = async (req, res) => {
     const { _id } = req.user.data;
 
     const info = await Users.aggregate([
-
       {
         $match: {
           _id: _id,
@@ -659,54 +660,160 @@ exports.editProfile = async (req, res) => {
       userName,
       userType, //1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng
       userEmail,
-      userPassword,
       userPhoneNumber,
       userBirthday,
+      decentralize,
       userGender, //1-nam ,2-nữ
       hopitalID,
+      district,
+      ward,
+      province,
+      specialist
     } = req.body;
+    const avatar = req.files.avatar;
+
+    const user_login = req.user.data;
+    const user_id = Number(req.params.user_id);
+
+    const time_now = new Date().getTime()
+
+    const user = await Users.findOne({ _id: user_id })
+    if (!user) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy tài khoản người dùng !", statusCode: StatusCodes.BAD_REQUEST })
+    }
+
+    if (user_login.accountType != 0 && user_login.hopital != user.hospitalId && user_login._id != user_id) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Truy cập không hợp lệ !", statusCode: StatusCodes.UNAUTHORIZED })
+    }
+
+    specialist = JSON.parse(specialist);
+    decentralize = JSON.parse(decentralize);
+
+    if (decentralize && decentralize.length > 0) {
+      const check_decentralize = await Decentralize.find({
+        _id: { $in: decentralize },
+      });
+      if (check_decentralize.length != specialist.length) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vai trò không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
+      }
+    }
+
+    if (specialist && specialist.length > 0) {
+      const check_specialist = await Specialist.find({
+        _id: { $in: specialist },
+      });
+      if (check_specialist.length != specialist.length) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Chuyên khoa không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
+      }
+    }
+
+    const currentFolderParent = path.join(__dirname, '..');
+    const staticPath = path.join(currentFolderParent, 'static')
+    if (!fs.existsSync(staticPath)) {
+      fs.mkdirSync(staticPath, { recursive: true });
+    }
+    const folder_avartar = path.join(staticPath, 'avatar')
+    let path_save = ""
+
+    if (avatar.originalFilename) {
+      path_save = `${folder_avartar}\\${time_now}_${avatar.originalFilename}`
+
+      if (!fs.existsSync(folder_avartar)) {
+        fs.mkdirSync(folder_avartar, { recursive: true });
+      }
+
+      fs.readFile(avatar.path, (err, data) => {
+        if (err) {
+          return res.status(500).json({ message: "Không thể xử lý ảnh đại diện !", statusCode: 500 })
+        }
+        if (fs.existsSync(user.avartar)) {
+          fs.unlinkSync(user.avartar);
+        }
+        fs.writeFile(path_save, data, function (err) {
+          if (err) {
+            return res.status(400).json({ message: err.message, statusCode: 400 })
+          }
+        })
+
+      })
+    }
+
+    if (userGender && userGender != "null") {
+      userGender = Number(userGender)
+    } else {
+      userGender = null
+    }
+
+    if (hopitalID && hopitalID != "null") {
+      hopitalID = Number(hopitalID)
+    } else {
+      hopitalID = null
+    }
+
+    if (userBirthday && userBirthday != "null") {
+      userBirthday = Number(userBirthday)
+    } else {
+      userBirthday = null
+    }
+    await Users.findByIdAndUpdate({
+      _id: user_id
+    }, {
+      avartar: path_save,
+      name: userName,
+      email: userEmail.toLowerCase(),
+      district: (district),
+      ward: (ward),
+      province: province,
+      gender: (userGender),
+      hospitalId: (hopitalID),
+      DOB: (userBirthday),
+      decentrialize: decentralize,
+      specialistId: specialist,
+      phoneNumber: userPhoneNumber,
+      type: userType,
+
+    })
+      .then((user) => {
+        return res.status(StatusCodes.OK).json({ data: user, message: "OK", statusCode: StatusCodes.OK })
+      })
+
+      .catch(err => {
+        log(err)
+        return res.status(500).json({ data: user, message: err.message, statusCode: StatusCodes.OK })
+      })
+
   } catch (err) {
     console.log(err);
     return res
       .status(200)
-      .json({ data: info, message: "get info customer success" });
+      .json({ message: err.message });
   }
 };
 
 exports.upload = async (req, res) => {
   try {
     const file = req.files.file;
+
     const currentFolderParent = path.join(__dirname, '..');
-    // console.log(currentFolderParent);
     const path1 = path.join(currentFolderParent, 'static')
-
     const folder_avartar = path.join(path1, 'avatar')
-    const save_path = path.join(folder_avartar, file.originalFilename.replace(" ", ""))
-    console.log(save_path);
 
-    if (!fs.existsSync(save_path)) {
-      // Create the folder
-      fs.mkdirSync(save_path);
+    if (!fs.existsSync(folder_avartar)) {
+      fs.mkdirSync(folder_avartar, { recursive: true });
+      console.log(`Directory ${folder_avartar} created successfully.`);
     }
 
     fs.readFile(file.path, (err, data) => {
       if (err) {
         return res.status(400).json({ message: "fail" })
       }
-      console.log('save_path', save_path);
-      fs.writeFile(save_path, data, function (err) {
+      fs.writeFile(`${folder_avartar}/${file.originalFilename}`, data, function (err) {
         if (err) {
           return res.status(400).json({ message: err })
-        };
-        console.log('Saved!');
-      });
-      // return res.status(200).json({ message: "OK" })
+        }
+      })
 
-
-
-    });
-
-
+    })
 
   } catch (err) {
     console.log(err);
