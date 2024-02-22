@@ -1,173 +1,97 @@
-const Employee = require("../models/Employee");
-const Hospital = require("../models/Hospital");
-const Customer = require("../models/Customer");
-const Specialist = require("../models/Specialist");
-const Admin = require("../models//admin");
+
 const Role = require("../models/role");
 const func = require("../services/function");
-const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const Decentralize = require("../models/decentralize");
 const { StatusCodes } = require("http-status-codes");
 const ApiError = require("../utils/ApiError ");
+const Users = require("../models/Users");
+const Specialist = require("../models/Specialist");
+const path = require('path');
+const fs = require('fs');
+const { log } = require("console");
 require("dotenv").config();
 
 exports.Register = async (req, res) => {
-  let {
-    userName,
-    userType, //1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng
-    userEmail,
-    userPassword,
-    userPhoneNumber,
-    userBirthday,
-    decentralize,
-    userGender, //1-nam ,2-nữ
-    hopitalID,
-  } = req.body;
+  try {
+    let {
+      userName,
+      userType, //1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng
+      userEmail,
+      userPassword,
+      userPhoneNumber,
+      userBirthday,
+      decentralize,
+      userGender, //1-nam ,2-nữ
+      hopitalID,
+      // district,
+      // ward,
+      // province,
+      specialist
+    } = req.body;
 
-  userPassword = await bcrypt.hash(userPassword, 10);
-
-  if (
-    userType === undefined ||
-    userType === null ||
-    userType === "" ||
-    !userEmail ||
-    !userPassword
-  ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "input is not valid");
-  }
-
-  let checkEmail = await func.checkEmail(userEmail);
-  if (!checkEmail) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "email is not valid");
-  }
-
-  if (userPhoneNumber) {
-    let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
-    if (!checkPhone) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "phoneNumber is not valid");
-    }
-  }
-  if (decentralize) {
-    const check_decentralize = await Decentralize.find({
-      _id: { $in: decentralize },
-    });
-    if (check_decentralize.length != decentralize.length) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "id decentralize is not valid");
-    }
-  }
-
-  if (userType == 0) {
-    //admin
-    let checkExits = await Admin.exists({
-      Admin_email: userEmail.toLowerCase(),
-    });
-    if (checkExits) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "email already used");
-    }
-    let maxId_admin = await func.maxID(Admin);
-
-    const new_Admin = new Admin({
-      _id: maxId_admin + 1,
-      Admin_name: userName,
-      Admin_email: userEmail.toLowerCase(),
-      Admin_password: userPassword,
-      Admin_Dsecentralize: decentralize ? decentralize : null,
-      CreateAt: new Date(),
-    });
-    await new_Admin
-      .save()
-      .then(() => res.status(200).json({ message: "add admin success", statusCode: 200 }))
-      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
-  } else if (userType == 1 || userType == 2) {
-    let checkExits = await Employee.exists({
-      employeeEmail: userEmail.toLowerCase(),
-    });
-    if (checkExits) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "email already used");
+    if (isNaN(userType) || !userEmail || !userPassword) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", StatusCodes: StatusCodes.BAD_REQUEST });
     }
 
-    if (!hopitalID || typeof Number(hopitalID) !== "number") {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "id hospital is not valid");
+    userPassword = await bcrypt.hash(userPassword, 10);
+
+    let checkEmail = await func.checkEmail(userEmail);
+    if (!checkEmail) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: "Email không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
     }
 
-    let maxId_employee = await func.maxID(Employee);
-
-    const new_Employee = new Employee({
-      _id: maxId_employee + 1,
-      employeeName: userName,
-      employeeType: Number(userType),
-      employeeEmail: userEmail.toLowerCase(),
-      employeePassword: userPassword,
-      employeePhone: userPhoneNumber,
-      employeeBirthday: userBirthday,
-      employeeGender: userGender,
-      hopitalID: hopitalID,
-      employee_Dsecentralize: decentralize ? decentralize : null,
-      CreateAt: new Date(),
-    });
-
-    await new_Employee
-      .save()
-      .then(() => res.status(200).json({ message: "add employee success", statusCode: 200 }))
-      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
-  } else if (userType == 3) {
-    let checkExits = await Hospital.exists({
-      hospitalEmail: userEmail.toLowerCase(),
-    });
-    if (checkExits) {
-      return res.status(400).json({ message: "email already used", statusCode: 400 });
+    if (userPhoneNumber) {
+      let checkPhone = await func.checkPhoneNumber(userPhoneNumber);
+      if (!checkPhone) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Số điện thoại không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
+      }
     }
-    let maxId_Hos = await func.maxID(Hospital);
 
-    const new_Hospital = new Hospital({
-      _id: maxId_Hos + 1,
-      hospitalName: userName,
-      hospitalEmail: userEmail.toLowerCase(),
-      hospitalPassword: userPassword,
-      hospitalPhone: userPhoneNumber,
-      hospitalDsecentralize: decentralize ? decentralize : null,
-      CreateAt: new Date(),
-    });
-
-    await new_Hospital
-      .save()
-      .then(() => res.status(200).json({ message: "add hospital success", statusCode: 200 }))
-      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
-  } else if (userType == 4) {
-    let checkExits = await Customer.exists({
-      Customer_email: userEmail.toLowerCase(),
-    });
-    if (checkExits) {
-      throw new Error(StatusCodes.BAD_REQUEST, "email already used");
+    if (decentralize && decentralize.length > 0) {
+      const check_decentralize = await Decentralize.find({
+        _id: { $in: decentralize },
+      });
+      if (check_decentralize.length != specialist.length) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vai trò không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
+      }
     }
-    let maxId_cus = await func.maxID(Customer);
-    let maxId_role = await func.maxID(Role);
+    if (specialist && specialist.length > 0) {
+      const check_specialist = await Specialist.find({
+        _id: { $in: specialist },
+      });
+      if (check_specialist.length != specialist.length) {
+        return res.status(StatusCodes.BAD_REQUEST).json({ message: "Chuyên khoa không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
+      }
+    }
+    const user_id_max = await func.maxID(Users)
 
-    const role_hos = new Role({
-      _id: maxId_role + 1,
-      user_id: maxId_cus + 1,
-      role_customer: 1,
-      account_type: 4,
-    });
-    await role_hos.save();
+    const new_account = Users({
+      _id: user_id_max + 1,
+      type: userType,
+      name: userName,
+      email: userEmail.toLowerCase(),
+      // district: district,
+      // ward: ward,
+      // province: province,
+      password: userPassword,
+      gender: userGender,
+      hospitalId: hopitalID,
+      DOB: userBirthday,
+      decentrialize: decentralize || [],
+      specialistId: specialist || []
+    })
+    await new_account.save()
+      .then(() => {
+        return res.status(StatusCodes.OK).json({ message: "Tạo tài khoản thành công.", StatusCodes: StatusCodes.OK });
+      })
 
-    const new_Customer = new Customer({
-      _id: maxId_cus + 1,
-      Customer_name: userName,
-      Customer_email: userEmail.toLowerCase(),
-      Cutomer_password: userPassword,
-      Customer_phoneNumber: userPhoneNumber,
-      Customer_Dsecentralize: decentralize ? decentralize : null,
-      CreateAt: new Date(),
-    });
+      .catch(err => {
+        return res.status(StatusCodes.OK).json({ message: err, StatusCodes: StatusCodes.OK });
+      })
 
-    await new_Customer
-      .save()
-      .then(() => res.status(200).json({ message: "add customer success", statusCode: 200 }))
-      .catch((err) => res.status(500).json({ message: err.message, statusCode: 500 }));
-  } else {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "userType is not valid");
+  } catch (err) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: err.message, StatusCodes: StatusCodes.INTERNAL_SERVER_ERROR });
   }
 };
 
@@ -179,142 +103,43 @@ exports.login = async (req, res) => {
       userType, //0-admin 1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách hàng
     } = req.body;
 
-    if (typeof Number(userType) !== "number" || !email || !password) {
-      return res.status(404).json({ message: "input is not valid", statusCode: 400 });
+    if (isNaN(userType) || !email || !password) {
+      return res.status(404).json({ message: "Bad request !", statusCode: 400 });
     }
-    //find by email and password
-    //0-admin1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách  hàng
-    if (userType == 0) {
-      let findUser = await Admin.findOne({
-        Admin_email: email.toLowerCase(),
-      });
-      if (!findUser) {
-        return res.status(400).json({ message: "email  is not correct", statusCode: 400 });
-      }
-      let check_password = await bcrypt.compare(
-        password,
-        findUser.Admin_password
-      );
-      if (!check_password) {
-        return res.status(404).json({ message: "password is not valid", statusCode: 400 });
-      }
-      let data = {
-        _id: findUser._id,
-        name: findUser.Admin_name,
-        // area: findUser.Admin_area,
-        accountType: 0,
-        createAt: findUser.CreateAt,
-        decentralize: findUser.Admin_Dsecentralize,
-        status: findUser.status,
-        email: findUser.Admin_email,
-        // address: findUser.address
-      };
-      let token = await func.createToken(data, "7d");
-      // let role = await Role.findOne({ user_id: findUser._id, account_type: 0 });
-      res
-        .status(200)
-        .json({
-          data: { token: token },
-          message: " admin login sucess",
-          statusCode: 200
-        });
-    } else if (userType == 1 || userType == 2) {
-      let findUser = await Employee.findOne({
-        employeeEmail: email.toLowerCase(),
-      });
-      if (!findUser) {
-        return res.status(400).json({ message: "email  is not correct", statusCode: 400 });
-      }
-      let check_password = await bcrypt.compare(
-        password,
-        findUser.employeePassword
-      );
-      if (!check_password) {
-        return res.status(400).json({ message: "password is not valid", statusCode: 400 });
-      }
-      let data = {
-        _id: findUser._id,
-        name: findUser.employeeName,
-        hospital_id: findUser.hopitalID,
-        accountType: findUser.employeeType,
-        identification: findUser.employeeIdentification,
-        phone: findUser.employeePhone,
-        address: findUser.employeeAddress,
-        birthday: findUser.employeeBirthday,
-        gender: findUser.employeeGender,
-        email: findUser.employeeEmail,
-      };
-      let token = await func.createToken(data, "7d");
-      //  let role = await Role.findOne({ user_id: findUser._id, account_type: findUser.employeeType });
-      res
-        .status(200)
-        .json({
-          data: { token: token },
-          message: " employee login sucess",
-          statusCode: 200
-        });
-    } else if (userType == 3) {
-      let findUser = await Hospital.findOne({
-        hospitalEmail: email.toLowerCase(),
-      });
-      if (!findUser) {
-        return res.status(400).json({ message: "email is not correct", statusCode: 400 });
-      }
-      let check_password = await bcrypt.compare(
-        password,
-        findUser.hospitalPassword
-      );
-      if (!check_password) {
-        return res.status(404).json({ message: "password is not valid", statusCode: 400 });
-      }
-      let data = {
-        _id: findUser._id,
-        name: findUser.hospitalName,
-        accountType: 3,
-        email: findUser.hospitalEmail,
-        identification: findUser.hospitalIdentification,
-        phone: findUser.hospitalPhone,
-        address: findUser.hospitalAddress,
-        //  birthday: findUser.employeeBirthday,
-        //   gender: findUser.employeeGender,
-        // roleId: findUser.roleId,
-      };
-      let token = await func.createToken(data, "7d");
-      let role = await Role.findOne({ user_id: findUser._id, account_type: 3 });
-      res
-        .status(200)
-        .json({ data: { token: token }, statusCode: 200, message: " hospital login sucess" });
-    } else if (userType == 4) {
-      let findUser = await Customer.findOne({
-        Customer_email: email.toLowerCase(),
-      });
-      if (!findUser) {
-        return res
-          .status(400)
-          .json({ message: "email or password is not correct" });
-      }
-      let check_password = await bcrypt.compare(
-        password,
-        findUser.Cutomer_password
-      );
-      if (!check_password) {
-        return res.status(400).json({ message: "password is not valid", statusCode: 400 });
-      }
-      let data = {
-        _id: findUser._id,
-        name: findUser.Customer_name,
-        accountType: 4,
-        identification: findUser.Customer_Identification,
-        phone: findUser.Customer_phoneNumber,
-        address: findUser.Customer_address,
-        birthday: findUser.employeeBirthday,
-        gender: findUser.Customer_birthday,
-      };
-      let token = await func.createToken(data, "7d");
-      res
-        .status(200)
-        .json({ data: { token: token }, statusCode: 200, message: " custommeer login sucess" });
+
+    let findUser = await Users.findOne({
+      email: email.toLowerCase(),
+    });
+    if (!findUser) {
+      return res.status(400).json({ message: "Email của bạn không đúng !", statusCode: 400 });
     }
+
+    let check_password = await bcrypt.compare(
+      password,
+      findUser.password
+    );
+    if (!check_password) {
+      return res.status(404).json({ message: "Mật khẩu của bạn không đúng !", statusCode: 400 });
+    }
+
+    let data = {
+      _id: findUser._id,
+      name: findUser.name,
+      accountType: 0,
+      createAt: findUser.createAt,
+      decentralize: findUser.decentrialize,
+      status: findUser.status,
+      email: findUser.email,
+    };
+    
+    let token = await func.createToken(data, "7d");
+
+    return res.status(200).json({
+      data: { token: token },
+      message: " admin login sucess",
+      statusCode: 200
+    });
+
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err.message, statusCode: 500 });
@@ -323,400 +148,158 @@ exports.login = async (req, res) => {
 
 exports.InfoPerson = async (req, res) => {
   try {
-    let { _id, accountType } = req.user.data;
+    const { _id } = req.user.data;
 
-    if (accountType == 0) {
-      let info = await Admin.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "Admin_Dsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: {
-            path: "$Decentralize",
-            preserveNullAndEmptyArrays: true
-          },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Admin_name" },
-            mail: { $first: "$Admin_email" },
-            roleusers: { $push: "$Decentralize" },
-            area: { $first: "$Admin_area" },
-            status: { $first: "$status" },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
+    const info = await Users.aggregate([
 
-    } else if (accountType == 1 || accountType == 2) {
-      let info = await Employee.aggregate([
-        {
-          $match: {
-            $and: [
-              { _id: Number(_id) },
-              { employeeType: accountType }
-            ]
-          },
+      {
+        $match: {
+          _id: _id,
         },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "employee_Decentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
+      },
+      {
+        $lookup: {
+          from: "decentralizes",
+          localField: "decentrialize",
+          foreignField: "_id",
+          as: "Decentralize",
         },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $unwind: {
+          path: "$Decentralize",
+          preserveNullAndEmptyArrays: true
         },
-        {
-          $lookup: {
-            from: "hospitals",
-            localField: "hopitalID",
-            foreignField: "_id",
-            as: "hospitals",
-          },
+      },
+      {
+        $lookup: {
+          from: "specialists",
+          localField: "specialistId",
+          foreignField: "_id",
+          as: "Specialists",
         },
-        {
-          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $unwind: {
+          path: "$Specialists",
+          preserveNullAndEmptyArrays: true
         },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+          decentralizes: { $addToSet: "$Decentralize" },
+          identification: { $first: "$identification" },
+          phoneNumber: { $first: '$phoneNumber' },
+          address: { $first: "$address" },
+          status: { $first: "$status" },
+          specialists: { $addToSet: "$Specialists" },
+          birthday: { $first: "$DOB" },
+          gender: { $first: "$gender" },
+          experient: { $first: "$experient" },
+          hospitalId: { $first: "$hospitalId" },
+          startWorking: { $first: "$startWorking" },
+          createAt: { $first: "$createAt" },
+          avartar: { $first: "$avartar" },
+          district: { $first: "$district" },
+          ward: { $first: "$ward" },
+          province: { $first: "$province" },
+          type: { $first: "$type" }
 
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$employeeName" },
-            roleusers: { $push: "$Decentralize" },
-            email: { $first: "$employeeEmail" },
-            phone: { $first: "$employeePhone" },
-            address: { $first: "$employeeAddress" },
-            birthday: { $first: "$employeeBirthday" },
-            experience: { $first: "$employeeExperience" },
-            hopitalId: { $first: "$hospitals.hospitalName" },
-            status: { $first: "$employeeStatus" },
-            type_account: { $first: "$employeeType" },
-            practicingCertificateId: { $first: "$PracticingCertificateID" },
-            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
-            salary: { $first: "$ employeeSalary" },
-            startWorking: { $first: "$ employeeStartWorking" },
-            status: { $first: "$employeeStatus" },
-            experience: { $first: "$employeeExperience" },
-            certificateCreateAt: { $first: "$certificateCreateAt" },
-            PracticingCertificateAdress: { $first: "$certificateCreateAt" },
-            gender: { $first: "$employeeGender" }
-          }
         },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
-    } else if (accountType == 3) {
-      let info = await Hospital.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "hospitalDsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$hospitalName" },
-            role: { $push: "$Decentralize" },
-            email: { $first: "$hospitalEmail" },
-            phone: { $first: "$hospitalPhone" },
-            address: { $first: "$hospitalAddress" },
-            status: { $first: "$hopitalStatus" },
-            type_account: { $first: accountType },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
-    } else if (accountType == 4) {
-      let info = await Customer.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "Customer_Dsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Customer_name" },
-            roleusers: { $first: "$Decentralize" },
-            email: { $first: "$Customer_email" },
-            phone: { $first: "$Customer_phoneNumber" },
-            address: { $first: "$Customer_address" },
-            status: { $first: "$hopitalStatus" },
-            type_account: { $first: accountType },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
-    } else {
-      return res
-        .status(400)
-        .json({ message: "you don't have permission to access this page", statusCode: 400 });
+      },
+    ]);
+    if (!info) {
+      return res.status(400).json({ message: "Không tìm thấy tài khoản !", statusCode: 400 });
     }
+    return res
+      .status(200)
+      .json({ data: info[0], message: "ok", statusCode: 200 });
+
   } catch (err) {
-    {
-      console.log(err);
-      return res.status(500).json({ message: err.message, statusCode: 500 });
-    }
+    console.log(err);
+    return res.status(500).json({ message: err.message, statusCode: 500 });
   }
 };
 
 exports.getInfoPerson = async (req, res) => {
-
   try {
     const user_id = Number(req.params.userId);
-    const acc_type = Number(req.params.typeAcc);
 
-    if (
-      isNaN(user_id) ||
-      isNaN(acc_type) ||
-      (user_id) <= 0 ||
-      (acc_type) < 0 && acc_type > 4
-    ) {
+    if (isNaN(user_id) || (user_id) <= 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
-    } else if (user_id != "") {
-      _id = Number(user_id);
-      accountType = Number(acc_type)
     }
 
-    if (accountType == 0) {
-      let info = await Admin.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
+    let info = await Users.aggregate([
+      {
+        $match: {
+          _id: user_id,
         },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "Admin_Dsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
+      },
+      {
+        $lookup: {
+          from: "decentralizes",
+          localField: "decentrialize",
+          foreignField: "_id",
+          as: "Decentralize",
         },
-        {
-          $unwind: {
-            path: "$Decentralize",
-            preserveNullAndEmptyArrays: true
-          },
+      },
+      {
+        $unwind: {
+          path: "$Decentralize",
+          preserveNullAndEmptyArrays: true
         },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Admin_name" },
-            mail: { $first: "$Admin_email" },
-            roleusers: { $push: "$Decentralize" },
-            area: { $first: "$Admin_area" },
-            status: { $first: "$status" },
-          },
+      },
+      {
+        $lookup: {
+          from: "specialists",
+          localField: "specialistId",
+          foreignField: "_id",
+          as: "Specialists",
         },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info admin sucess", statusCode: 200 });
+      },
+      {
+        $unwind: {
+          path: "$Specialists",
+          preserveNullAndEmptyArrays: true
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+          decentralizes: { $addToSet: "$Decentralize" },
+          identification: { $first: "$identification" },
+          phoneNumber: { $first: '$phoneNumber' },
+          address: { $first: "$address" },
+          status: { $first: "$status" },
+          specialists: { $addToSet: "$Specialists" },
+          birthday: { $first: "$DOB" },
+          gender: { $first: "$gender" },
+          experient: { $first: "$experient" },
+          hospitalId: { $first: "$hospitalId" },
+          startWorking: { $first: "$startWorking" },
+          createAt: { $first: "$createAt" },
+          avartar: { $first: "$avartar" },
+          district: { $first: "$district" },
+          ward: { $first: "$ward" },
+          province: { $first: "$province" },
+          type: { $first: "$type" }
 
-    } else if (accountType == 1 || accountType == 2) {
-      let info = await Employee.aggregate([
-        {
-          $match: {
-            $and: [
-              { _id: Number(_id) },
-              { employeeType: accountType }
-            ]
-          },
         },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "employee_Decentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $lookup: {
-            from: "hospitals",
-            localField: "hopitalID",
-            foreignField: "_id",
-            as: "hospitals",
-          },
-        },
-        {
-          $unwind: { path: "$hospitals", preserveNullAndEmptyArrays: true },
-        },
-
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$employeeName" },
-            roleusers: { $push: "$Decentralize" },
-            email: { $first: "$employeeEmail" },
-            phone: { $first: "$employeePhone" },
-            address: { $first: "$employeeAddress" },
-            birthday: { $first: "$employeeBirthday" },
-            experience: { $first: "$employeeExperience" },
-            hopitalId: { $first: "$hospitals.hospitalName" },
-            status: { $first: "$employeeStatus" },
-            type_account: { $first: "$employeeType" },
-            practicingCertificateId: { $first: "$PracticingCertificateID" },
-            practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
-            salary: { $first: "$ employeeSalary" },
-            startWorking: { $first: "$ employeeStartWorking" },
-            status: { $first: "$employeeStatus" },
-            experience: { $first: "$employeeExperience" },
-            certificateCreateAt: { $first: "$certificateCreateAt" },
-            PracticingCertificateAdress: { $first: "$certificateCreateAt" },
-            gender: { $first: "$employeeGender" }
-          }
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info employee success", statusCode: 200 });
-    } else if (accountType == 3) {
-      let info = await Hospital.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "hospitalDsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$hospitalName" },
-            role: { $push: "$Decentralize" },
-            email: { $first: "$hospitalEmail" },
-            phone: { $first: "$hospitalPhone" },
-            address: { $first: "$hospitalAddress" },
-            status: { $first: "$hopitalStatus" },
-            type_account: { $first: accountType },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info Hospital success", statusCode: 200 });
-    } else if (accountType == 4) {
-      let info = await Customer.aggregate([
-        {
-          $match: {
-            _id: _id,
-          },
-        },
-        {
-          $lookup: {
-            from: "decentralizes",
-            localField: "Customer_Dsecentralize",
-            foreignField: "_id",
-            as: "Decentralize",
-          },
-        },
-        {
-          $unwind: { path: "$Decentralize", preserveNullAndEmptyArrays: true },
-        },
-
-        {
-          $group: {
-            _id: "$_id",
-            name: { $first: "$Customer_name" },
-            roleusers: { $first: "$Decentralize" },
-            email: { $first: "$Customer_email" },
-            phone: { $first: "$Customer_phoneNumber" },
-            address: { $first: "$Customer_address" },
-            status: { $first: "$hopitalStatus" },
-            type_account: { $first: accountType },
-          },
-        },
-      ]);
-      if (!info) {
-        return res.status(400).json({ message: "id user not exists", statusCode: 400 });
-      }
-      return res
-        .status(200)
-        .json({ data: info[0], message: "get info customer success", statusCode: 200 });
-    } else {
-      return res
-        .status(400)
-        .json({ message: "you don't have permission to access this page", statusCode: 400 });
+      },
+    ]);
+    if (!info) {
+      return res.status(400).json({ message: "Không tìm thấy tài khoản !", statusCode: 400 });
     }
+    return res
+      .status(200)
+      .json({ data: info[0], message: "OK", statusCode: 200 });
+
+
   } catch (err) {
     {
       console.log(err);
@@ -728,21 +311,31 @@ exports.getInfoPerson = async (req, res) => {
 exports.getListAdmin = async (req, res) => {
   try {
     const accountType = req.user.data.accountType;
+
     const pageSize = req.query.pageSize || 10;
     const page = req.query.page || 1;
     const sort = req.query.sorts || -1; //  hoặc 1
     const email = req.query.email || "";
     const name = req.query.name || "";
-    const code_role = req.query.code_role;
 
     if (accountType != 0) {
       return res.status(400).json({ message: "function is not valid", statusCode: 400 });
     }
-    let list_admin = await Admin.aggregate([
+
+    let list_admin = await Users.aggregate([
+      {
+        $match: {
+          $and: [
+            { email: { $regex: email?.toLowerCase() } },
+            { name: { $regex: name || "" } },
+            { type: 0 }
+          ],
+        }
+      },
       {
         $lookup: {
           from: "decentralizes",
-          localField: "Admin_Dsecentralize",
+          localField: "decentrialize",
           foreignField: "_id",
           as: "decentralizes",
         },
@@ -754,21 +347,27 @@ exports.getListAdmin = async (req, res) => {
         }
       },
       {
-        $match: {
-          $and: [
-            { Admin_email: { $regex: email?.toLowerCase() } },
-            { Admin_name: { $regex: name || "" } },
-            // { "$decentralizes.decentralize_code": code_role }
-          ],
-        },
-      },
-      {
         $group: {
           _id: "$_id",
-          email: { $first: "$Admin_email" },
-          name: { $first: "$Admin_name" },
-          role: { $push: "$decentralizes" },
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+          decentralizes: { $addToSet: "$Decentralize" },
+          identification: { $first: "$identification" },
+          phoneNumber: { $first: '$phoneNumber' },
+          address: { $first: "$address" },
           status: { $first: "$status" },
+          specialists: { $addToSet: "$Specialists" },
+          birthday: { $first: "$DOB" },
+          gender: { $first: "$gender" },
+          experient: { $first: "$experient" },
+          hospitalId: { $first: "$hospitalId" },
+          startWorking: { $first: "$startWorking" },
+          createAt: { $first: "$createAt" },
+          avartar: { $first: "$avartar" },
+          district: { $first: "$district" },
+          ward: { $first: "$ward" },
+          province: { $first: "$province" },
+          type: { $first: "$type" }
         },
       },
       {
@@ -784,11 +383,12 @@ exports.getListAdmin = async (req, res) => {
       },
     ]);
 
-    total = await Admin.find(
+    total = await Users.find(
       {
         $and: [
-          { Admin_email: { $regex: email?.toLowerCase() } },
-          { Admin_name: { $regex: name || "" } },
+          { email: { $regex: email?.toLowerCase() } },
+          { name: { $regex: name || "" } },
+          { type: 0 }
         ],
       }).count()
 
@@ -804,6 +404,7 @@ exports.getListAdmin = async (req, res) => {
       message: "OK",
       statusCode: 200
     });
+
   } catch (err) {
     console.log(err);
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, err.message);
@@ -818,19 +419,20 @@ exports.getListHospital = async (req, res) => {
   const sort = req.query.sort || -1;
   const pageSize = req.query.pageSize || 10;
 
-  const list_hospital = await Hospital.aggregate([
+  const list_hospital = await Users.aggregate([
     {
       $match: {
         $and: [
-          { hospitalName: { $regex: hospital_name } },
-          { hospitalEmail: { $regex: email?.toLowerCase() } },
+          { name: { $regex: hospital_name } },
+          { email: { $regex: email?.toLowerCase() } },
+          { type: 3 }
         ]
       }
     },
     {
       $lookup: {
         from: "decentralizes",
-        localField: "hospitalDsecentralize",
+        localField: "decentrialize",
         foreignField: "_id",
         as: "decentralizes"
       }
@@ -844,7 +446,7 @@ exports.getListHospital = async (req, res) => {
     {
       $lookup: {
         from: "specialists",
-        localField: "Specialist_ID",
+        localField: "specialistId",
         foreignField: "_id",
         as: "specialists"
       }
@@ -858,17 +460,26 @@ exports.getListHospital = async (req, res) => {
     {
       $group: {
         _id: "$_id",
-        name: { $first: "$hospitalName" },
-        email: { $first: "$hospitalEmail" },
-        identification: { $first: "$hospitalIdentification" },
-        role: { $push: "$decentralizes" },
-        specialist: { $push: "$specialists" },
-        phone: { $first: "$hospitalPhone" },
-        address: { $first: "$hospitalAddress" },
-        practicingCertificateID: { $first: "$hos_PracticingCertificateID" },
-        practicingCertificateImg: { $first: "$hos_PracticingCertificateImg" },
-        status: { $first: "$hopitalStatus" }
-      }
+        name: { $first: "$name" },
+        email: { $first: "$email" },
+        decentralizes: { $addToSet: "$Decentralize" },
+        identification: { $first: "$identification" },
+        phoneNumber: { $first: '$phoneNumber' },
+        address: { $first: "$address" },
+        status: { $first: "$status" },
+        specialists: { $addToSet: "$Specialists" },
+        birthday: { $first: "$DOB" },
+        gender: { $first: "$gender" },
+        experient: { $first: "$experient" },
+        hospitalId: { $first: "$hospitalId" },
+        startWorking: { $first: "$startWorking" },
+        createAt: { $first: "$createAt" },
+        avartar: { $first: "$avartar" },
+        district: { $first: "$district" },
+        ward: { $first: "$ward" },
+        province: { $first: "$province" },
+        type: { $first: "$type" }
+      },
     },
     {
       $skip: Number(pageSize * (page - 1)),
@@ -882,10 +493,11 @@ exports.getListHospital = async (req, res) => {
       },
     }
   ])
-  total = await Hospital.find({
+  total = await Users.find({
     $and: [
-      { hospitalName: { $regex: hospital_name } },
-      { hospitalEmail: { $regex: email?.toLowerCase() } },
+      { name: { $regex: hospital_name } },
+      { email: { $regex: email?.toLowerCase() } },
+      { type: 3 },
     ]
   }).count()
 
@@ -928,7 +540,7 @@ exports.getListEmployee = async (req, res) => {
     condition.employeeType = typeAcc
   }
 
-  const list_employee = await Employee.aggregate([
+  const list_employee = await User.aggregate([
     {
       $match: {
         $and: [
@@ -1060,4 +672,48 @@ exports.editProfile = async (req, res) => {
       .json({ data: info, message: "get info customer success" });
   }
 };
+
+exports.upload = async (req, res) => {
+  try {
+    const file = req.files.file;
+    const currentFolderParent = path.join(__dirname, '..');
+    // console.log(currentFolderParent);
+    const path1 = path.join(currentFolderParent, 'static')
+
+    const folder_avartar = path.join(path1, 'avatar')
+    const save_path = path.join(folder_avartar, file.originalFilename.replace(" ", ""))
+    console.log(save_path);
+
+    if (!fs.existsSync(save_path)) {
+      // Create the folder
+      fs.mkdirSync(save_path);
+    }
+
+    fs.readFile(file.path, (err, data) => {
+      if (err) {
+        return res.status(400).json({ message: "fail" })
+      }
+      console.log('save_path', save_path);
+      fs.writeFile(save_path, data, function (err) {
+        if (err) {
+          return res.status(400).json({ message: err })
+        };
+        console.log('Saved!');
+      });
+      // return res.status(200).json({ message: "OK" })
+
+
+
+    });
+
+
+
+  } catch (err) {
+    console.log(err);
+    return res
+      .status(200)
+      .json({ message: "get info customer success" });
+  }
+
+}
 

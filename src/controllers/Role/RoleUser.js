@@ -20,11 +20,6 @@ exports.createRoleUser = async (req, res) => {
       code
     } = req.body;
 
-    const accountType = req.user.data.accountType;
-    if (accountType !== 0 && accountType !== 3) {
-      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
-    }
-
     if (!role_name || !code || !type_account) {
       return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
@@ -45,30 +40,29 @@ exports.createRoleUser = async (req, res) => {
   }
 }
 
-exports.EditRleUser = async (req, res) => {
+exports.EditRoleUser = async (req, res) => {
   try {
-    let { id,
-      role_name,
-    } = req.body;
-    const accountType = req.user.data.accountType;
-    if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
-    }
+    const { role_name } = req.body;
+    const id = req.params.id;
+
     if (!role_name || !id) {
       return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
+
     const check_exists = await RoleUser.exists({ _id: id })
     if (!check_exists) {
       return res.status(400).json({ message: "Role is not exists", statusCode: 400 })
     }
+
     await RoleUser.findOneAndUpdate(
       { _id: id },
       {
         role_name: role_name,
-        // role_code: code,
       }
     )
+
     return res.status(200).json({ message: " update success", statusCode: 200 })
+
   }
   catch (err) {
     console.log(err)
@@ -80,10 +74,7 @@ exports.deleteRoleUser = async (req, res) => {
   try {
     let { id,
     } = req.params;
-    const accountType = req.user.data.accountType;
-    if (accountType !== 0) {
-      return res.status(400).json({ message: "function is not valid", statusCode: 400 })
-    }
+
     if (!id) {
       return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
@@ -109,7 +100,7 @@ exports.getListRoleUser = async (req, res) => {
       {
         $match: {
           $and: [
-            { role_parent: (-1) },
+            { role_parent: null },
             { role_name: { $regex: new RegExp(name, "i") } }
           ]
         }
@@ -128,7 +119,7 @@ exports.getListRoleUser = async (req, res) => {
         $group: {
           _id: '$_id',
           name: { $first: '$role_name' },
-          role_child: { $push: "$role_child" },
+          role_child: { $addToSet: "$role_child" },
           code: { $first: '$role_code' },
           role_parent: { $first: '$role_parent' },
         }

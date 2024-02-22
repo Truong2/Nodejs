@@ -34,13 +34,12 @@ var authRoute = require("./routes/routes");
 app.use("/api", authRoute);
 
 app.listen(port, process.env.APP_HOST, () => {
-  // eslint-disable-next-line no-console
   console.log(`server is running at ${process.env.APP_HOST}:${port}`);
 });
 
-// app.listen(port, process.env.IPADDRESS, () => {
-//   console.log(`Server is running on http://${process.env.IPADDRESS}:${port}`);
-// });
+app.listen(port, process.env.IPADDRESS, () => {
+  console.log(`Server is running on http://${process.env.IPADDRESS}:${port}`);
+});
 
 app.listen(port, '127.0.0.1', () => {
   console.log(`Server is running on http://${"127.0.0.1"}:${port}`);

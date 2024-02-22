@@ -31,7 +31,7 @@ const errorHandlingMiddleware = (err, req, res, next) => {
 
   // Trả responseError về phía Front-end
   delete responseError.stack;
-  res.status(responseError.statusCode).json(responseError);
+  res.status(responseError.statusCode).json({ responseError, StatusCodes: responseError.statusCode });
 };
 
 module.exports = errorHandlingMiddleware;

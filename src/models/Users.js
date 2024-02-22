@@ -4,6 +4,10 @@ const User_schema = new mongoose.Schema({
     type: Number,
     require: true
   },
+  type: {
+    type: Number,
+    require: true
+  },
   name: {
     type: String,
     require: true
@@ -12,17 +16,17 @@ const User_schema = new mongoose.Schema({
     type: String,
     require: true
   },
-  district:{
-    type:Number,
+  district: {
+    type: Number,
   },
-  ward:{
-    type:Number
+  ward: {
+    type: Number
   },
-  province:{
-    type:Number
+  province: {
+    type: Number
   },
-  avartar:{
-    type:String
+  avartar: {
+    type: String
   },
   password: {
     type: String,

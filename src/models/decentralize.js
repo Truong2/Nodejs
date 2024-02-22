@@ -20,6 +20,9 @@ const decentralizeModel = new mongoose.Schema({
     type: String,
     require: true
   },
+  typeAccount: {
+    type:Number,
+  },
   status: {
     type: Number,
     default: 1 // 1-Active , 0-Inactive
