@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const { log } = require("console");
 require("dotenv").config();
+const nodemailer = require('nodemailer');
 
 exports.Register = async (req, res) => {
   try {
@@ -24,9 +25,9 @@ exports.Register = async (req, res) => {
       decentralize,
       userGender, //1-nam ,2-nữ
       hopitalID,
-      // district,
-      // ward,
-      // province,
+      district,
+      ward,
+      province,
       specialist
     } = req.body;
 
@@ -72,9 +73,9 @@ exports.Register = async (req, res) => {
       type: userType,
       name: userName,
       email: userEmail.toLowerCase(),
-      // district: district,
-      // ward: ward,
-      // province: province,
+      district: district,
+      ward: ward,
+      province: province,
       password: userPassword,
       gender: userGender,
       hospitalId: hopitalID,
@@ -101,10 +102,9 @@ exports.login = async (req, res) => {
     let {
       email,
       password,
-      userType, //0-admin 1- bác sĩ , 2 - lễ tân , 3 - cơ sở y tế ,4-khách hàng
     } = req.body;
 
-    if (isNaN(userType) || !email || !password) {
+    if (!email || !password) {
       return res.status(404).json({ message: "Bad request !", statusCode: 400 });
     }
 
@@ -133,12 +133,25 @@ exports.login = async (req, res) => {
       email: findUser.email,
       hospitalId: findUser.hospitalId
     };
+    let type_user = "";
+    if (findUser.type == 0) {
+      type_user = "quản trị viên"
+    }
+    else if (findUser.type == 1 || findUser.type == 2) {
+      type_user = "nhân viên"
+    }
+    else if (findUser.type == 3) {
+      type_user = "cơ sở y tế "
+    }
+    else if (findUser.type == 0) {
+      type_user = "khách hàng"
+    }
 
     let token = await func.createToken(data, "7d");
 
     return res.status(200).json({
       data: { token: token },
-      message: " admin login sucess",
+      message: `Bạn đã đăng nhập với vai trò ${type_user} thành công!`,
       statusCode: 200
     });
 
@@ -203,7 +216,7 @@ exports.InfoPerson = async (req, res) => {
           hospitalId: { $first: "$hospitalId" },
           startWorking: { $first: "$startWorking" },
           createAt: { $first: "$createAt" },
-          avartar: { $first: "$avartar" },
+          avatar: { $first: "$avatar" },
           district: { $first: "$district" },
           ward: { $first: "$ward" },
           province: { $first: "$province" },
@@ -284,7 +297,7 @@ exports.getInfoPerson = async (req, res) => {
           hospitalId: { $first: "$hospitalId" },
           startWorking: { $first: "$startWorking" },
           createAt: { $first: "$createAt" },
-          avartar: { $first: "$avartar" },
+          avatar: { $first: "$avatar" },
           district: { $first: "$district" },
           ward: { $first: "$ward" },
           province: { $first: "$province" },
@@ -364,7 +377,7 @@ exports.getListAdmin = async (req, res) => {
           hospitalId: { $first: "$hospitalId" },
           startWorking: { $first: "$startWorking" },
           createAt: { $first: "$createAt" },
-          avartar: { $first: "$avartar" },
+          avatar: { $first: "$avatar" },
           district: { $first: "$district" },
           ward: { $first: "$ward" },
           province: { $first: "$province" },
@@ -475,7 +488,7 @@ exports.getListHospital = async (req, res) => {
         hospitalId: { $first: "$hospitalId" },
         startWorking: { $first: "$startWorking" },
         createAt: { $first: "$createAt" },
-        avartar: { $first: "$avartar" },
+        avatar: { $first: "$avatar" },
         district: { $first: "$district" },
         ward: { $first: "$ward" },
         province: { $first: "$province" },
@@ -662,20 +675,24 @@ exports.editProfile = async (req, res) => {
       userEmail,
       userPhoneNumber,
       userBirthday,
-      decentralize,
       userGender, //1-nam ,2-nữ
       hopitalID,
       district,
       ward,
       province,
-      specialist
+      specialist,
+      identification,
+      address,
+      decentrialize,
+      gender,
+      experient,
+      hospitalId,
+      startWorking,
     } = req.body;
-    const avatar = req.files.avatar;
+
 
     const user_login = req.user.data;
     const user_id = Number(req.params.user_id);
-
-    const time_now = new Date().getTime()
 
     const user = await Users.findOne({ _id: user_id })
     if (!user) {
@@ -686,12 +703,9 @@ exports.editProfile = async (req, res) => {
       return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Truy cập không hợp lệ !", statusCode: StatusCodes.UNAUTHORIZED })
     }
 
-    specialist = JSON.parse(specialist);
-    decentralize = JSON.parse(decentralize);
-
-    if (decentralize && decentralize.length > 0) {
+    if (decentrialize && decentrialize.length > 0) {
       const check_decentralize = await Decentralize.find({
-        _id: { $in: decentralize },
+        _id: { $in: decentrialize },
       });
       if (check_decentralize.length != specialist.length) {
         return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vai trò không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
@@ -707,58 +721,9 @@ exports.editProfile = async (req, res) => {
       }
     }
 
-    const currentFolderParent = path.join(__dirname, '..');
-    const staticPath = path.join(currentFolderParent, 'static')
-    if (!fs.existsSync(staticPath)) {
-      fs.mkdirSync(staticPath, { recursive: true });
-    }
-    const folder_avartar = path.join(staticPath, 'avatar')
-    let path_save = ""
-
-    if (avatar.originalFilename) {
-      path_save = `${folder_avartar}\\${time_now}_${avatar.originalFilename}`
-
-      if (!fs.existsSync(folder_avartar)) {
-        fs.mkdirSync(folder_avartar, { recursive: true });
-      }
-
-      fs.readFile(avatar.path, (err, data) => {
-        if (err) {
-          return res.status(500).json({ message: "Không thể xử lý ảnh đại diện !", statusCode: 500 })
-        }
-        if (fs.existsSync(user.avartar)) {
-          fs.unlinkSync(user.avartar);
-        }
-        fs.writeFile(path_save, data, function (err) {
-          if (err) {
-            return res.status(400).json({ message: err.message, statusCode: 400 })
-          }
-        })
-
-      })
-    }
-
-    if (userGender && userGender != "null") {
-      userGender = Number(userGender)
-    } else {
-      userGender = null
-    }
-
-    if (hopitalID && hopitalID != "null") {
-      hopitalID = Number(hopitalID)
-    } else {
-      hopitalID = null
-    }
-
-    if (userBirthday && userBirthday != "null") {
-      userBirthday = Number(userBirthday)
-    } else {
-      userBirthday = null
-    }
     await Users.findByIdAndUpdate({
       _id: user_id
     }, {
-      avartar: path_save,
       name: userName,
       email: userEmail.toLowerCase(),
       district: (district),
@@ -767,14 +732,20 @@ exports.editProfile = async (req, res) => {
       gender: (userGender),
       hospitalId: (hopitalID),
       DOB: (userBirthday),
-      decentrialize: decentralize,
+      decentrialize: decentrialize,
       specialistId: specialist,
       phoneNumber: userPhoneNumber,
       type: userType,
-
+      identification: identification,
+      address: address,
+      decentrialize,
+      gender,
+      experient,
+      hospitalId,
+      startWorking,
     })
       .then((user) => {
-        return res.status(StatusCodes.OK).json({ data: user, message: "OK", statusCode: StatusCodes.OK })
+        return res.status(StatusCodes.OK).json({ data: user, message: "Cập nhật tài khoản thành công.", statusCode: StatusCodes.OK })
       })
 
       .catch(err => {
@@ -783,44 +754,177 @@ exports.editProfile = async (req, res) => {
       })
 
   } catch (err) {
-    console.log(err);
     return res
-      .status(200)
+      .status(500)
       .json({ message: err.message });
   }
 };
 
-exports.upload = async (req, res) => {
+exports.add_avatar_service = async (req, res) => {
   try {
-    const file = req.files.file;
-
-    const currentFolderParent = path.join(__dirname, '..');
-    const path1 = path.join(currentFolderParent, 'static')
-    const folder_avartar = path.join(path1, 'avatar')
-
-    if (!fs.existsSync(folder_avartar)) {
-      fs.mkdirSync(folder_avartar, { recursive: true });
-      console.log(`Directory ${folder_avartar} created successfully.`);
+    const avatar = req.files.avatar;
+    const user_id = req.params.user_id;
+    const user = await Users.findOne({
+      _id: Number(user_id)
+    })
+    if (!user) {
+      return res.status(400).json({ message: "Không tìm thấy tài khoản người dùng !", statusCode: 400 })
     }
 
-    fs.readFile(file.path, (err, data) => {
-      if (err) {
-        return res.status(400).json({ message: "fail" })
+    const time_now = new Date().getTime();
+
+    const currentFolderParent = path.join(__dirname, '..');
+    const staticPath = path.join(currentFolderParent, 'static')
+    if (!fs.existsSync(staticPath)) {
+      fs.mkdirSync(staticPath, { recursive: true });
+    }
+    const folder_avatar = path.join(staticPath, 'avatar')
+    let path_save = ""
+
+    if (avatar.originalFilename) {
+      path_save = `${folder_avatar}\\${time_now}_${avatar.originalFilename}`
+
+      if (!fs.existsSync(folder_avatar)) {
+        fs.mkdirSync(folder_avatar, { recursive: true });
       }
-      fs.writeFile(`${folder_avartar}/${file.originalFilename}`, data, function (err) {
+
+      fs.readFile(avatar.path, (err, data) => {
         if (err) {
-          return res.status(400).json({ message: err })
+          return res.status(500).json({ message: "Không thể xử lý ảnh đại diện !", statusCode: 500 })
         }
+        if (fs.existsSync(user.avatar)) {
+          fs.unlinkSync(user.avatar);
+        }
+        fs.writeFile(path_save, data, function (err) {
+          if (err) {
+            return res.status(500).json({ message: err.message, statusCode: 500 })
+          }
+        })
+      })
+    }
+
+    await Users.findByIdAndUpdate({
+      _id: user_id
+    }, {
+      avatar: path_save
+    })
+      .then(user => {
+        return res.status(StatusCodes.OK).json({
+          message: "diện của bạn đã được cập nhật.",
+          statusCode: 200
+        })
       })
 
-    })
+      .catch(err => {
+        log(err)
+        return res.status(500).json({ data: user, message: err.message, statusCode: 500 })
+      })
 
   } catch (err) {
-    console.log(err);
     return res
-      .status(200)
-      .json({ message: "get info customer success" });
+      .status(500)
+      .json({ message: err.message });
   }
-
 }
 
+exports.get_avatar_service = async (req, res) => {
+  try {
+
+    const user_id = req.params.user_id;
+    const user = await Users.findOne({
+      _id: Number(user_id)
+    })
+    if (!user) {
+      return res.status(400).json({ message: "Không tìm thấy tài khoản người dùng !", statusCode: 400 })
+    }
+
+    // sending file
+    return res.sendFile(user.avatar, function (error) {
+      if (error) {
+        console.error(error);
+        res.status(error.status).end();
+      } else {
+        console.log('File sent successfully');
+      }
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: err.message });
+  }
+}
+
+exports.update_password_service = async (req, res) => {
+  const user_login = req.user.data;
+
+  const user_id = Number(req.params.user_id);
+  const {
+    old_password,
+    new_password
+  } = req.body;
+
+  const user = await Users.findOne({ _id: user_id })
+  if (!user) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy tài khoản người dùng !", statusCode: StatusCodes.BAD_REQUEST })
+  }
+
+  if (user_login._id != user_id) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Truy cập không hợp lệ !", statusCode: StatusCodes.UNAUTHORIZED })
+  }
+
+  const check_password = await bcrypt.compare(old_password, user.password);
+  if (!check_password) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Mật khẩu cũ không hợp lệ !", statusCode: StatusCodes.BAD_REQUEST })
+  }
+  const n_password = await bcrypt.hash(new_password, 10)
+  await Users.findByIdAndUpdate({
+    _id: user_id
+  }, {
+    password: n_password
+  })
+    .then(() => {
+      return res.status(StatusCodes.OK).json({ message: "Đổi mật khẩu thành công.", statusCode: 200 })
+    })
+    .catch(err => {
+      log(err)
+      return res.status(500).json({ data: user, message: err.message, statusCode: 500 })
+    })
+}
+
+
+exports.get_otp_service = async (req, res) => {
+
+  const email = req.body.email;
+  var transporter = nodemailer.createTransport({
+    // host: 'localhost:8017',
+    port: 587,
+    service: 'gmail',
+    auth: {
+      user: 'tinh.nv1610@gmail.com',
+      pass: 'tinh16102001'
+    }
+  });
+
+  var mailOptions = {
+    from: 'tinh.nv1610@gmail.com',
+    to: 'tinhnvt1610@gmail.com',
+    subject: 'Sending Email using Node.js',
+    text: 'Check'
+  };
+
+  transporter.sendMail(mailOptions)
+  try {
+    console.log('Email sent: ');
+    // Send mail with defined transport object
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:12121212 ');
+
+
+    // Return success response
+    return res.status(StatusCodes.OK).json({ message: "OTP sent successfully.", statusCode: StatusCodes.OK });
+  } catch (error) {
+    // Handle error
+    console.error(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message, statusCode: StatusCodes.INTERNAL_SERVER_ERROR });
+  }
+}

@@ -17,15 +17,15 @@ const User_schema = new mongoose.Schema({
     require: true
   },
   district: {
-    type: Number,
+    type: String,
   },
   ward: {
-    type: Number
+    type: String
   },
   province: {
-    type: Number
+    type: String
   },
-  avartar: {
+  avatar: {
     type: String
   },
   password: {
