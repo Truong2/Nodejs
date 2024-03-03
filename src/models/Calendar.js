@@ -3,52 +3,46 @@ const Calendar = new mongoose.Schema({
     _id: {
         type: Number
     },
-    Calendar_userName: {
+    name: {
         type: String
     },
-    Calendar_userIdentification: {
+    identification: {
         type: String
     },
-    Calendar_userPhone: {
+    phoneNumber: {
         type: String
     },
-    Calendar_userDOB: {
+    birthday: {
         type: Date
     },
-    Carlendar_userEmail: {
+    email: {
         type: String
     },
-    Carlendar_userAddress: {
+    adress: {
         type: String
     },
-    Carlendar_reason: {
+    reason: {
         type: String
     },
-    Carlendar_userInsuranceNumber: {
-        type: String
-    },
-    Carlendar_serviceId: {
+    serviceId: {
         type: Number
     },
-    Calendar_hospitalBook: {
+    hospitalId: {
         type: Number
     },
-    Calendar_doctorBook: {
+    doctorId: {
         type: Number
     },
-    Calendar_timeBook: {
+    time: {
         type: Date
     },
-    Carlendar_userAccept: {
-        type: Number
-    },
-    Carlendar_timeAccept: {
+    timeAccept: {
         type: Date
     },
-    Calendar_CreatAt: {
+    creatAt: {
         type: Date
     },
-    Calendar_status: {
+    status: {
         type: Number
     }
 })

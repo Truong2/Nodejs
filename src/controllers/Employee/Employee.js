@@ -34,6 +34,29 @@ exports.get_list_time_working_service = async (req, res) => {
       message: "success", statusCode: 200
     })
 }
+exports.update_time_working_service = async (req, res) => {
+  try {
+    const time_id = req.params.time_id;
+
+    const time = req.body.time;
+    await TimeWorking.findByIdAndUpdate({
+      _id: Number(time_id)
+    }, {
+      time_working: time
+    })
+      .then(() => {
+        return res.status(200).json({ message: "OK" })
+      })
+      .catch((err) => {
+        return res.status(200).json({ message: err.message })
+      })
+
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json({ message: err.message })
+  }
+
+}
 
 exports.create_calendar_working_serviece = async (req, res) => {
   const {
@@ -57,9 +80,6 @@ exports.create_calendar_working_serviece = async (req, res) => {
   }
 
   const time = dayjs(new Date(date)).startOf('D').unix() * 1000;
-  console.log(new Date(time))
-  // console.log(new Date(time).getDate())
-  // console.log(new Date())
   const old_schedule = await CalendarWorking.findOne({
     userId: user_login._id,
     hospitalId: user_login.hospital_id,
