@@ -1,5 +1,5 @@
 const Decentralize = require('../../models/decentralize')
-const Hospital = require("../../models/Hospital")
+const User = require("../../models/Users")
 const Specialist = require("../../models/Specialist")
 exports.addSpecialist = async (req, res) => {
   try {
@@ -20,12 +20,12 @@ exports.addSpecialist = async (req, res) => {
       return res.status(400).send({ message: "Bad request !", statusCode: 400 });
     }
 
-    const hospital = await Hospital.findOne({ _id: hospital_id });
+    const hospital = await User.findOne({ _id: hospital_id });
     if (!hospital) {
       return res.status(400).send({ message: "Không tìm thấy cơ sở y tế !", statusCode: 400 });
     }
 
-    const list_specialist = hospital.Specialist_ID;
+    const list_specialist = hospital.specialistId;
 
     specialist = specialist.map((item) => {
       if (!list_specialist.includes(item)) {
@@ -33,12 +33,12 @@ exports.addSpecialist = async (req, res) => {
       }
     })
 
-    await Hospital.findOneAndUpdate(
+    await User.findOneAndUpdate(
       {
         _id: hospital_id
       },
       {
-        Specialist_ID: list_specialist
+        specialistId: list_specialist
       })
       .then(() => { return res.status(200).json({ message: "success", statusCode: 200 }) })
       .catch((err) => { return res.status(500).json({ message: err, statusCode: 500 }) })

@@ -21,7 +21,7 @@ const roleUserShema = new mongoose.Schema({
     },
     createAt: {
         type: Number,
-        default: new Date()
+        default: new Date().getTime()
     },
     role_parent: {
         type: Number,

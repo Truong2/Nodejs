@@ -1,7 +1,6 @@
 const Specialist = require("../../models/Specialist")
-const ListSpecialist = require("../../models/ListSpecialist")
 const func = require("../../services/function");
-const Hospital = require("../../models/Hospital");
+const User = require("../../models/Users");
 
 exports.request_add_sepcial = async (req, res) => {
   try {
@@ -33,8 +32,8 @@ exports.request_add_sepcial = async (req, res) => {
 
 exports.get_list_specialist = async (req, res) => {
   const hos_id = Number(req.params.hos_id);
-  const id_spec = await Hospital.findOne({ _id: hos_id })
-  const list_spec = await Specialist.find({ _id: { $in: id_spec.Specialist_ID } }).select("Specialist_Name")
+  const id_spec = await User.findOne({ _id: hos_id })
+  const list_spec = await Specialist.find({ _id: { $in: id_spec.specialistId } }).select("Specialist_Name")
   return res.status(200).json({
     data: {
       content: list_spec

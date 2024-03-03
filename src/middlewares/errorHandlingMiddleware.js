@@ -1,7 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 
 // Middleware xử lý lỗi tập trung trong ứng dụng Back-end NodeJS (ExpressJS)
-const errorHandlingMiddleware = (err, req, res, next) => {
+ const errorHandlingMiddleware = (err, req, res, next) => {
   console.log("ERROR LOG ", new Date().toLocaleString());
   console.log("Request:", req.method, req.originalUrl);
   console.log("Params:", req.params);

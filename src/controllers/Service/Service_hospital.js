@@ -1,22 +1,15 @@
 const TypeService = require('../../models/TypeService')
 const Service = require('../../models/Service')
-const Hospital = require('../../models/Hospital')
+const User = require('../../models/Users')
 const func = require('../../services/function')
 const { StatusCodes } = require('http-status-codes')
 
 const compareArrays = (arr1, arr2) => {
-  // if (arr1.length !== arr2.length) {
-  //   return false;
-  // }
-
   const isEqual = arr1.every((value) => arr2.includes(value));
   return isEqual
-
 }
 
 const query_list_service = async (req, hospital_id) => {
-
-
   const serviceName = req.query.serviceName || "";
   const pageSize = req.body.pageSize || 10;
   const pageNum = req.body.pageNum || 1;
@@ -32,7 +25,7 @@ const query_list_service = async (req, hospital_id) => {
     },
     {
       $lookup: {
-        from: "hospitals",
+        from: "users",
         localField: "HosId",
         foreignField: "_id",
         as: "Hospital"
@@ -78,9 +71,9 @@ const query_list_service = async (req, hospital_id) => {
         name: { $first: "$serviceName" },
         cost: { $first: "$serviceCost" },
         user_number: { $first: "$service_userUsed" },
-        hospital: { $first: "$Hospital.hospitalName" },
-        specialist: { $push: "$Specialist.Specialist_Name" },
-        serviceType: { $push: "$SeviceType.serviceName" },
+        hospital: { $first: "$Hospital.name" },
+        specialist: { $addToSet: "$Specialist.Specialist_Name" },
+        serviceType: { $addToSet: "$SeviceType.serviceName" },
         status: { $first: "$status" }
       }
     },
@@ -97,10 +90,10 @@ const query_list_service = async (req, hospital_id) => {
 }
 
 exports.add_service_service = async (req, res) => {
-  const { serviceName, serviceCost, HosId, SpecialistId, type_service } = req.body;
+  const { serviceName, serviceCost, SpecialistId, type_service } = req.body;
 
   const hospital_id = Number(req.params.hospital_id);
-  const check_exists_hos = await Hospital.exists({ _id: hospital_id })
+  const check_exists_hos = await User.exists({ _id: hospital_id, type: 3 })
   if (!check_exists_hos) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Không tìm thấy cơ sở y tế",
@@ -111,25 +104,25 @@ exports.add_service_service = async (req, res) => {
   const user_login = req.user.data;
 
   if (!serviceName || isNaN(serviceCost) || Number(serviceCost) <= 0 || type_service.length <= 0) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "bad request", statusCode: StatusCodes.BAD_REQUEST })
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request ! ", statusCode: StatusCodes.BAD_REQUEST })
   }
 
-  if (user_login.accountType != 0 && user_login.accountType != 3) {
+  if ((user_login.accountType != 0 && user_login.accountType != 3) && user_login._id != hospital_id) {
     return res.status(401).json({ message: "truy cập không hợp lệ !", statusCode: 401 })
   }
-  const hos_id = user_login.accountType == 0 ? HosId : user_login._id
+  const hos_id = user_login.accountType == 0 ? hospital_id : user_login._id;
 
   if (!hos_id) {
     return res.status(400).json({ message: "Không thể tìm thấy cơ sở y tế !", statusCode: 400 })
   }
 
   if (SpecialistId) {
-    const check_exists_spec = await Hospital.findOne({
-      _id: hos_id
+    const check_exists_spec = await User.findOne({
+      _id: hos_id,
+      type: 3
     })
 
-
-    if (!compareArrays(SpecialistId, check_exists_spec.Specialist_ID)) {
+    if (!compareArrays(SpecialistId, check_exists_spec.specialistId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy chuyên khoa của cơ sở y tế !", statusCode: StatusCodes.BAD_REQUEST })
     }
   }
@@ -171,13 +164,13 @@ exports.add_service_service = async (req, res) => {
 exports.update_service_service = async (req, res) => {
   const { serviceCost, serviceName, SpecialistId, type_service } = req.body;
 
-  const hospital_id = req.params.hospital_id;
+  const hospital_id = Number(req.params.hospital_id);
   const service_id = Number(req.params.service_id);
   const user_login = req.user.data;
 
   const hos_id = hospital_id;
 
-  const check_exists_hos = await Hospital.exists({ _id: hospital_id })
+  const check_exists_hos = await User.exists({ _id: hospital_id, type: 3 })
   if (!check_exists_hos) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Không tìm thấy cơ sở y tế !",
@@ -190,12 +183,11 @@ exports.update_service_service = async (req, res) => {
   }
 
   if (SpecialistId) {
-    const check_exists_spec = await Hospital.findOne({
-      _id: hos_id
+    const check_exists_spec = await User.findOne({
+      _id: hos_id,
+      type: 3
     })
-    console.log(check_exists_spec.Specialist_ID);
-    console.log(check_exists_spec.Specialist_ID);
-    if (!compareArrays(SpecialistId, check_exists_spec.Specialist_ID)) {
+    if (!compareArrays(SpecialistId, check_exists_spec.specialistId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy chuyên khoa của cơ sở y tế !", statusCode: StatusCodes.BAD_REQUEST })
     }
   }
@@ -204,7 +196,6 @@ exports.update_service_service = async (req, res) => {
   if (check_type_service.length != type_service.length) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "Không tìm thấy loại dịch vụ !", statusCode: StatusCodes.BAD_REQUEST })
   }
-
 
   const service = await Service.findOne({
     _id: service_id,
@@ -219,11 +210,11 @@ exports.update_service_service = async (req, res) => {
     }
 
     await Service.findOneAndUpdate({
-      _id: service_id
+      _id: service_id,
+      HosId: hos_id,
     }, {
       serviceName: serviceName,
       serviceCost: serviceCost,
-      HosId: hos_id,
       SpecialistId: SpecialistId,
       type_service: type_service,
     })
@@ -263,12 +254,12 @@ exports.detail_service_service = async (req, res) => {
         from: "hospitals",
         localField: "HosId",
         foreignField: "_id",
-        as: "Hospital"
+        as: "User"
       }
     },
     {
       $unwind: {
-        path: "$Hospital",
+        path: "$User",
         preserveNullAndEmptyArrays: true
       }
     },
@@ -306,10 +297,9 @@ exports.detail_service_service = async (req, res) => {
         name: { $first: "$serviceName" },
         cost: { $first: "$serviceCost" },
         user_number: { $first: "$service_userUsed" },
-        hospital: { $first: "$Hospital.hospitalName" },
-        // specialist: { $push: "$Specialist.id" },
+        hospital: { $first: "$User.hospitalName" },
         specialist: { $first: "$Specialist.id" },
-        serviceType: { $push: "$SeviceType.serviceName" },
+        serviceType: { $addToSet: "$SeviceType.serviceName" },
         status: { $first: "$status" }
       }
     },
@@ -326,13 +316,18 @@ exports.detail_service_service = async (req, res) => {
       message: "success.",
       statusCode: StatusCodes.OK
     })
+  } else {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Không tìm thấy dịch vụ !",
+      statusCode: StatusCodes.BAD_REQUEST
+    })
   }
 }
 
 exports.get_list_service_service = async (req, res) => {
   const hospital_id = Number(req.params.hospital_id);
 
-  check_exists_hos = await Hospital.exists({ _id: hospital_id })
+  check_exists_hos = await User.exists({ _id: hospital_id })
   if (!check_exists_hos) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Không tìm thấy cơ sở y tế !",
@@ -357,13 +352,11 @@ exports.get_list_service_service = async (req, res) => {
 }
 
 exports.delete_service_service = async (req, res) => {
-
-  console.log("check");
   const hospital_id = req.params.hospital_id;
   const service_id = Number(req.params.service_id);
   const user_login = req.user.data;
 
-  const check_exists_hos = await Hospital.exists({ _id: hospital_id })
+  const check_exists_hos = await User.exists({ _id: hospital_id })
   if (!check_exists_hos) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Không tìm thấy cơ sở y tế !",

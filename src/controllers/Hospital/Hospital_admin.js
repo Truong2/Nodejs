@@ -1,4 +1,4 @@
-const Hospital = require('../../models/Hospital')
+const User = require('../../models/Users')
 const Decentralizes = require('../../models/decentralize')
 
 const get_list_hospital = async (req) => {
@@ -7,16 +7,23 @@ const get_list_hospital = async (req) => {
 	const pageSize = req.query.pageSize || 10;
 	const sort = req.query.sort || -1;
 
-	const list = await Hospital.aggregate([
+	const list = await User.aggregate([
 		{
 			$match: {
-				hospitalName: { $regex: `${name}` }
+				$and: [
+					{
+						name: { $regex: `${name}` }
+					},
+					{
+						type: 3
+					}
+				]
 			}
 		},
 		{
 			$lookup: {
 				from: "specialists",
-				localField: 'Specialist_ID',
+				localField: 'specialistId',
 				foreignField: '_id',
 				as: "listspecialists"
 			}
@@ -25,7 +32,7 @@ const get_list_hospital = async (req) => {
 		{
 			$lookup: {
 				from: "decentralizes",
-				localField: 'hospitalDsecentralize',
+				localField: 'decentrialize',
 				foreignField: '_id',
 				as: "decentralizes"
 			}
@@ -34,14 +41,18 @@ const get_list_hospital = async (req) => {
 		{
 			$group: {
 				_id: '$_id',
-				name: { $first: '$hospitalName' },
-				specialist: { $push: "$listspecialists" },
-				// roles: { $push: "$decentralizes" },
+				name: { $first: '$name' },
+				specialist: { $addToSet: "$listspecialists" },
+				decentrialize: { $addToSet: "$decentralizes" },
 				email: { $first: '$hospitalEmail' },
 				identification: { $first: '$hospitalIdentification' },
-				phone: { $first: '$hospitalPhone' },
-				address: { $first: '$hospitalAddress' },
-				status: { $first: '$hopitalStatus' },
+				phone: { $first: '$phoneNumber' },
+				address: { $first: '$address' },
+				status: { $first: '$status' },
+				district: { $first: '$district' },
+				ward: { $first: '$ward' },
+				province: { $first: '$province' },
+				DOB: { $first: '$DOB' },
 			}
 		},
 		{
@@ -57,8 +68,11 @@ const get_list_hospital = async (req) => {
 		}
 	])
 
-	const total = await Hospital.find({
-		hospitalName: { $regex: `${name}` }
+	const total = await User.find({
+		$and: [
+			{ name: { $regex: `${name}` } },
+			{ type: 3 }
+		]
 	}).count()
 
 	return {
@@ -89,68 +103,6 @@ exports.getListHospital = async (req, res) => {
 	}
 }
 
-exports.editHospital = async (req, res) => {
-	try {
-		let { id,
-			name,
-			phone,
-			identification,
-			address,
-			practicingCertificateID,
-			UPracticingCertificateImg,
-			decentralize,
-			status
-		} = req.body;
-
-		const data = req.user.data;
-		if (data.accountType != 0 && data.accountType != 3) {
-			return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
-		}
-
-		const check_exists = await Hospital.exists({ _id: (id) })
-		if (!check_exists) {
-			return res.status(400).json({ message: "id hospital is not valid", statusCode: 400 })
-		}
-
-		const check_decentralize = await Decentralizes.find({ _id: { $in: decentralize } })
-		if (decentralize.length !== check_decentralize.length) {
-			return res.status(400).json({ message: "decentralize is not valid", statusCode: 400 })
-		}
-		await Hospital.findOneAndUpdate({
-			_id: id
-		}, {
-			hospitalName: name,
-			hospitalIdentification: identification,
-			hospitalPhone: phone,
-			hospitalAddress: address,
-			hospitalDsecentralize: decentralize,
-			hos_PracticingCertificateID: practicingCertificateID,
-			hos_UPracticingCertificateImg: UPracticingCertificateImg,
-			hopitalStatus: status
-		}).then(async () => {
-			const { list, page, pageSize, total } = await get_list_hospital(req)
-			return res.status(200).json({
-				data: {
-					content: list,
-					page: page,
-					size: pageSize,
-					pageSize: list.length,
-					totalElement: total,
-					total_page: parseInt(total / pageSize + 1),
-				},
-				message: "update success", statusCode: 200
-			});
-		})
-			.catch((err) => {
-				return res.status(500).json({ message: err.message, statusCode: 500 })
-			})
-
-	} catch (err) {
-		console.log(err)
-		return res.status(500).json({ message: err.message, statusCode: 500 })
-
-	}
-}
 
 exports.grantRoleHospital = async (req, res) => {
 	try {
@@ -165,15 +117,16 @@ exports.grantRoleHospital = async (req, res) => {
 		if (decentralize.length !== check_role.length) {
 			return res.status(400).json({ message: "decentralize is not valid", statusCode: 400 })
 		}
-		const check_exists_hospital = await Hospital.exists({ _id: id })
+
+		const check_exists_hospital = await User.exists({ _id: id })
 		if (!check_exists_hospital) {
 			return res.status(400).json({ message: "id hospital is not valid", statusCode: 400 })
 		}
 
-		await Hospital.findOneAndUpdate({
+		await User.findOneAndUpdate({
 			_id: id
 		}, {
-			hospitalDsecentralize: decentralize
+			decentrialize: decentralize
 		})
 			.then(async () => {
 				const { list, page, pageSize, total } = await get_list_hospital(req)
@@ -186,7 +139,7 @@ exports.grantRoleHospital = async (req, res) => {
 						totalElement: total,
 						total_page: parseInt(total / pageSize + 1),
 					},
-					message: "update success", statusCode: 200
+					message: "Cập nhật quyền thành công.", statusCode: 200
 				});
 			})
 			.catch(err => { return res.status(500).json({ message: err.message, statusCode: 500 }) })
@@ -202,23 +155,22 @@ exports.changeStatus = async (req, res) => {
 		let { id } = req.body;
 		const data = req.user.data;
 		if (data.accountType != 0) {
-			return res.status(400).json({ message: "Function is not valid", statusCode: 400 })
+			return res.status(400).json({ message: "Function is not valid !", statusCode: 400 })
 		}
 
-		const hospital = await Hospital.findOne({ _id: id })
+		const hospital = await User.findOne({ _id: id })
 		if (!hospital) {
-			return res.status(400).json({ message: 'id hospital is not valid', statusCode: 400 })
+			return res.status(400).json({ message: 'Không tìm thấy tài khoản cơ sở y tế !', statusCode: 400 })
 		}
 
-		await Hospital.findOneAndUpdate({
+		await User.findOneAndUpdate({
 			_id: id
 		}, {
-			hopitalStatus: Number(hospital.hopitalStatus) == 1 ? 0 : 1
+			status: Number(hospital.status) == 1 ? 0 : 1
 		})
 			.then(async () => {
 				const { list, page, pageSize, total } = await get_list_hospital(req)
 				return res.status(200).json({
-
 					data: {
 						content: list,
 						page: page,
@@ -227,7 +179,8 @@ exports.changeStatus = async (req, res) => {
 						totalElement: total,
 						total_page: parseInt(total / pageSize + 1),
 					},
-					message: "Cập nhật trạng thái thành công", statusCode: 200
+					message: "Cập nhật trạng thái thành công.",
+					statusCode: 200
 				});
 			})
 			.catch(err => { return res.status(500).json({ message: err.message, statusCode: 500 }) })
@@ -278,11 +231,12 @@ exports.list_hospital = async (req, res) => {
 	const pageSize = req.query.pageSize || 10;
 	const sort = req.query.sort || -1;
 
-	const list_hos = await Hospital.find({
-		hospitalName: { $regex: `${name}` }
+	const list_hos = await User.find({
+		name: { $regex: `${name}` }
 	}).select(
-		"hospitalName "
-	).sort({ name: Number(sort) })
+		"hospitalName"
+	)
+		.sort({ name: Number(sort) })
 		.skip((Number(page) - 1) * Number(pageSize))
 		.limit(Number(pageSize))
 
@@ -292,17 +246,14 @@ exports.list_hospital = async (req, res) => {
 
 	return res.status(200).json({
 		data: {
-			content: list_hos,
 			page: page,
 			size: pageSize,
-			pageSize: list_hos.length,
+			content: list_hos,
 			totalElement: total,
+			pageSize: list_hos.length,
 			total_page: parseInt(total / pageSize + 1),
 		}
 		, message: "Success",
 		statusCode: 200
 	});
-
-
-
 }

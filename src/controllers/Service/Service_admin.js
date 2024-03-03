@@ -1,10 +1,8 @@
 const TypeService = require('../../models/TypeService')
 const Service = require('../../models/Service')
-const Hospital = require('../../models/Hospital')
+const User = require('../../models/Users')
 const func = require('../../services/function')
 const { StatusCodes } = require('http-status-codes')
-const { Types } = require('mongoose')
-
 
 const get_list_service = async (req) => {
   let serviceName = req.query.serviceName || "";
@@ -61,7 +59,7 @@ exports.create_service = async (req, res) => {
 
   serviceCode = serviceCode.trim()
   const check_exist_code = await TypeService.find({ serviceCode: serviceCode })
-  if (check_exist_code) {
+  if (!check_exist_code) {
     return res.status(400).json({ message: "Mã dịch vụ đã tồn tại !", statusCode: 400 })
   }
 
@@ -176,7 +174,7 @@ exports.update_name_service_service = async (req, res) => {
 
   const user_login = req.user.data;
   if (user_login.accountType != 0) {
-    return res.status(StatusCodes.NON_AUTHORITATIVE_INFORMATION).json({ message: "Bad request !", statusCode: StatusCodes.NON_AUTHORITATIVE_INFORMATION })
+    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Bad request !", statusCode: StatusCodes.UNAUTHORIZED })
   }
 
   if (!service_id || isNaN(service_id) || Number(service_id) <= 0) {
@@ -296,7 +294,7 @@ exports.get_list_service_by_type_service = async (req, res) => {
     },
     {
       $lookup: {
-        from: "hospitals",
+        from: "users",
         localField: "HosId",
         foreignField: "_id",
         as: "Hospital"
@@ -342,9 +340,9 @@ exports.get_list_service_by_type_service = async (req, res) => {
         name: { $first: "$serviceName" },
         cost: { $first: "$serviceCost" },
         user_number: { $first: "$service_userUsed" },
-        hospital: { $first: "$Hospital.hospitalName" },
-        specialist: { $push: "$Specialist.Specialist_Name" },
-        serviceType: { $push: "$SeviceType.serviceName" },
+        hospital: { $first: "$Hospital.name" },
+        specialist: { $addToSet: "$Specialist.Specialist_Name" },
+        serviceType: { $addToSet: "$SeviceType.serviceName" },
         status: { $first: "$status" }
       }
     },

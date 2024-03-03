@@ -8,7 +8,7 @@ const routesHospital = require("./Hospital/routesHopital");
 const routesEmployee = require("./Employee/routesEmployee")
 const routesSevice = require('./Service/routesSevice')
 const auth = require("./auth");
-
+const tool = require('./tool')
 
 router.use("/", auth);
 router.use("/", routeRole);
@@ -16,6 +16,7 @@ router.use("/", routeSpecialist);
 router.use("/", routesHospital);
 router.use("/", routesEmployee);
 router.use("/", routesSevice);
+router.use("/", tool);
 
 
 router.use(errorHandlingMiddleware);

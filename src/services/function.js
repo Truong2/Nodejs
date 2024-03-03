@@ -1,9 +1,5 @@
 const validator = require("email-validator");
 const jwt = require('jsonwebtoken');
-const Employee = require("../models/Employee");
-const Hospital = require("../models/Hospital");
-const Customer = require("../models/Customer");
-const Admin = require("../models//admin");
 require("dotenv").config();
 exports.maxID = async (model) => {
     const maxUser = await model.findOne({}, {}, { sort: { _id: -1 } });
