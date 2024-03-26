@@ -574,10 +574,10 @@ exports.getListEmployee = async (req, res) => {
 
   const condition = {}
   if (user_login.accountType == 3) {
-    condition.hopitalID = user_login._id
+    condition.hospitalId = user_login._id
   }
   if (typeAcc) {
-    condition.employeeType = typeAcc
+    condition.type = typeAcc
   }
 
   const list_employee = await Users.aggregate([
