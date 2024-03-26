@@ -3,6 +3,9 @@ const Calendar = new mongoose.Schema({
     _id: {
         type: Number
     },
+    user_create: {
+        type: Number
+    },
     name: {
         type: String
     },
@@ -13,7 +16,7 @@ const Calendar = new mongoose.Schema({
         type: String
     },
     birthday: {
-        type: Date
+        type: Number// second
     },
     email: {
         type: String
@@ -34,13 +37,13 @@ const Calendar = new mongoose.Schema({
         type: Number
     },
     time: {
-        type: Date
+        type: Number
     },
     timeAccept: {
         type: Date
     },
     creatAt: {
-        type: Date
+        type: Number// second
     },
     status: {
         type: Number

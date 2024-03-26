@@ -1,5 +1,4 @@
 
-const Role = require("../models/role");
 const func = require("../services/function");
 const bcrypt = require("bcryptjs");
 const Decentralize = require("../models/decentralize");
@@ -57,6 +56,7 @@ exports.Register = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vai trò không hợp lệ !", StatusCodes: StatusCodes.BAD_REQUEST });
       }
     }
+
     if (specialist && specialist.length > 0) {
       const check_specialist = await Specialist.find({
         _id: { $in: specialist },
@@ -200,6 +200,20 @@ exports.InfoPerson = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "calendarworkings",
+          localField: "calendarWorking",
+          foreignField: "_id",
+          as: "calendarworkings",
+        },
+      },
+      {
+        $unwind: {
+          path: "$calendarworkings",
+          preserveNullAndEmptyArrays: true
+        },
+      },
+      {
         $group: {
           _id: "$_id",
           name: { $first: "$name" },
@@ -220,7 +234,8 @@ exports.InfoPerson = async (req, res) => {
           district: { $first: "$district" },
           ward: { $first: "$ward" },
           province: { $first: "$province" },
-          type: { $first: "$type" }
+          type: { $first: "$type" },
+          calendarworkings: { $addToSet: "$calendarworkings" },
 
         },
       },
@@ -281,8 +296,22 @@ exports.getInfoPerson = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "calendarworkings",
+          localField: "calendarWorking",
+          foreignField: "_id",
+          as: "calendarworkings",
+        },
+      },
+      {
+        $unwind: {
+          path: "$calendarworkings",
+          preserveNullAndEmptyArrays: true
+        },
+      },
+      {
         $group: {
-          _id: "$_id",
+          id: "$_id",
           name: { $first: "$name" },
           email: { $first: "$email" },
           decentralizes: { $addToSet: "$Decentralize" },
@@ -301,7 +330,8 @@ exports.getInfoPerson = async (req, res) => {
           district: { $first: "$district" },
           ward: { $first: "$ward" },
           province: { $first: "$province" },
-          type: { $first: "$type" }
+          type: { $first: "$type" },
+          calendarworkings: { $addToSet: "$calendarworkings" },
 
         },
       },
@@ -542,10 +572,6 @@ exports.getListEmployee = async (req, res) => {
   const pageSize = req.query.pageSize || 10;
   const typeAcc = req.query.typeAcc || null;
 
-  if (user_login.accountType !== 0 && user_login.accountType !== 3) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Function is not valid", statusCode: StatusCodes.UNAUTHORIZED })
-  }
-
   const condition = {}
   if (user_login.accountType == 3) {
     condition.hopitalID = user_login._id
@@ -554,13 +580,13 @@ exports.getListEmployee = async (req, res) => {
     condition.employeeType = typeAcc
   }
 
-  const list_employee = await User.aggregate([
+  const list_employee = await Users.aggregate([
     {
       $match: {
         $and: [
-          { employeeName: { $regex: employee_name } },
-          { employeeEmail: { $regex: email?.toLowerCase() } },
-          { employeeType: 1 },
+          { name: { $regex: employee_name } },
+          { email: { $regex: email?.toLowerCase() } },
+          { type: 1 },
           condition
         ]
       }
@@ -568,7 +594,7 @@ exports.getListEmployee = async (req, res) => {
     {
       $lookup: {
         from: "decentralizes",
-        localField: "employee_Decentralize",
+        localField: "decentrialize",
         foreignField: "_id",
         as: "decentralizes"
       }
@@ -581,8 +607,8 @@ exports.getListEmployee = async (req, res) => {
     },
     {
       $lookup: {
-        from: "hospitals",
-        localField: "hopitalID",
+        from: "users",
+        localField: "hospitalId",
         foreignField: "_id",
         as: "hospitals"
       }
@@ -596,7 +622,7 @@ exports.getListEmployee = async (req, res) => {
     {
       $lookup: {
         from: "specialists",
-        localField: "SpecialistID",
+        localField: "specialistId",
         foreignField: "_id",
         as: "specialists"
       }
@@ -610,24 +636,20 @@ exports.getListEmployee = async (req, res) => {
     {
       $group: {
         _id: "$_id",
-        name: { $first: "$employeeName" },
-        type: { $first: "$employeeType" },
-        email: { $first: "$employeeEmail" },
-        hopital: { $first: "$hospitals.hospitalName" },
-        identification: { $first: "$employeeIdentification" },
-        specialist: { $addToSet: "$specialists.Specialist_Name" },
+        name: { $first: "$name" },
+        type: { $first: "$type" },
+        email: { $first: "$email" },
+        hopitalName: { $first: "$hospitals.name" },
+        hospitalid: { $first: "$hospitals._id" },
+        identification: { $first: "$identification" },
+        specialist: { $addToSet: "$specialists.Specialist_name" },
         role: { $addToSet: "$decentralizes.decentralize_name" },
-        phone: { $first: "$employeePhone" },
-        address: { $first: "$employeeAddress" },
-        birthday: { $first: "$employeeBirthday" },
-        practicingCertificateId: { $first: "$PracticingCertificateID" },
-        practicingCertificateImg: { $first: "$UPracticingCertificateImg" },
-        salary: { $first: "$ employeeSalary" },
-        startWorking: { $first: "$ employeeStartWorking" },
-        status: { $first: "$employeeStatus" },
-        experience: { $first: "$employeeExperience" },
-        certificateCreateAt: { $first: "$certificateCreateAt" },
-        PracticingCertificateAdress: { $first: "$certificateCreateAt" },
+        phone: { $first: "$phoneNumber" },
+        address: { $first: "$address" },
+        birthday: { $first: "$DOB" },
+        startWorking: { $first: "$ startWorking" },
+        status: { $first: "$status" },
+        experience: { $first: "$experient" },
         gender: { $first: "$employeeGender" }
       }
     },
@@ -643,10 +665,10 @@ exports.getListEmployee = async (req, res) => {
       },
     }
   ])
-  total = await Employee.find({
+  total = await Users.find({
     $and: [
-      { employeeName: { $regex: employee_name } },
-      { employeeEmail: { $regex: email?.toLowerCase() } },
+      { name: { $regex: employee_name } },
+      { email: { $regex: email?.toLowerCase() } },
       condition
     ]
   }).count()
@@ -689,7 +711,6 @@ exports.editProfile = async (req, res) => {
       hospitalId,
       startWorking,
     } = req.body;
-
 
     const user_login = req.user.data;
     const user_id = Number(req.params.user_id);
@@ -745,7 +766,10 @@ exports.editProfile = async (req, res) => {
       startWorking,
     })
       .then((user) => {
-        return res.status(StatusCodes.OK).json({ data: user, message: "Cập nhật tài khoản thành công.", statusCode: StatusCodes.OK })
+        return res.status(StatusCodes.OK).json({
+          data: user,
+          message: "Cập nhật tài khoản thành công.", statusCode: StatusCodes.OK
+        })
       })
 
       .catch(err => {
@@ -891,10 +915,9 @@ exports.update_password_service = async (req, res) => {
     })
 }
 
-
 exports.get_otp_service = async (req, res) => {
 
-  const email = req.body.email;
+  // const email = req.body.email;
   var transporter = nodemailer.createTransport({
     // host: 'localhost:8017',
     port: 587,
@@ -916,9 +939,8 @@ exports.get_otp_service = async (req, res) => {
   try {
     console.log('Email sent: ');
     // Send mail with defined transport object
-    const info = await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions)
     console.log('Email sent:12121212 ');
-
 
     // Return success response
     return res.status(StatusCodes.OK).json({ message: "OTP sent successfully.", statusCode: StatusCodes.OK });

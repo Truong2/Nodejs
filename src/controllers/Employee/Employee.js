@@ -2,7 +2,8 @@ const TimeWorking = require("../../models/TimeWorking")
 const CalendarWorking = require("../../models/CalendarWorking")
 const func = require("../../services/function")
 const { StatusCodes } = require("http-status-codes");
-const dayjs = require('dayjs')
+const dayjs = require('dayjs');
+const Users = require("../../models/Users");
 
 exports.create_time_working_service = async (req, res) => {
   let { time } = req.body;
@@ -34,6 +35,7 @@ exports.get_list_time_working_service = async (req, res) => {
       message: "success", statusCode: 200
     })
 }
+
 exports.update_time_working_service = async (req, res) => {
   try {
     const time_id = req.params.time_id;
@@ -82,14 +84,14 @@ exports.create_calendar_working_serviece = async (req, res) => {
   const time = dayjs(new Date(date)).startOf('D').unix() * 1000;
   const old_schedule = await CalendarWorking.findOne({
     userId: user_login._id,
-    hospitalId: user_login.hospital_id,
+    hospitalId: user_login.hospitalId,
     date: time,
   })
 
   if (old_schedule) {
     await CalendarWorking.findOneAndUpdate({
       userId: user_login._id,
-      hospitalId: user_login.hospital_id,
+      hospitalId: user_login.hospitalId,
       date: time,
     }, {
       time_working: time_working
@@ -107,7 +109,7 @@ exports.create_calendar_working_serviece = async (req, res) => {
     const new_schedule = new CalendarWorking({
       _id: max_id_shedule + 1,
       userId: user_login._id,
-      hospitalId: user_login.hospital_id,
+      hospitalId: user_login.hospitalId,
       date: time,
       time_working: time_working
     })
@@ -117,6 +119,7 @@ exports.create_calendar_working_serviece = async (req, res) => {
         return res.status(StatusCodes.OK).json({ message: "create new time working success", statusCode: 200 })
       })
       .catch(err => {
+        console.log(err)
         return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({ message: "create fail", statusCode: StatusCodes.UNPROCESSABLE_ENTITY })
       })
   }
@@ -124,22 +127,22 @@ exports.create_calendar_working_serviece = async (req, res) => {
 
 exports.get_list_calendar_working_serviece = async (req, res) => {
   const time = req.params.time;
+  const doctor_id = parseInt(req.params.doctor_id)
   const filter_time = dayjs(new Date(time * 1000)).startOf('D').unix();
-  console.log(filter_time)
 
-  const user_login = req.user.data;
+  const doctor = await Users.findOne({ _id: doctor_id });
 
-  if (user_login.accountType !== 1) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid", statusCode: StatusCodes.UNAUTHORIZED })
-  }
+  // if (doctor.accountType !== 1) {
+  //   return res.status(StatusCodes.UNAUTHORIZED).json({ message: "fucntion is not valid", statusCode: StatusCodes.UNAUTHORIZED })
+  // }
 
   const list_calendar = await CalendarWorking.aggregate([
     {
       $match: {
         $and: [
           { date: { $gte: filter_time * 1000 } },
-          { userId: user_login._id },
-          { hospitalId: user_login.hospital_id }
+          { userId: doctor._id },
+          { hospitalId: doctor.hospitalId }
         ]
       }
     },

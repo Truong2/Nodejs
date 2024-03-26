@@ -9,6 +9,7 @@ const routesEmployee = require("./Employee/routesEmployee")
 const routesSevice = require('./Service/routesSevice')
 const auth = require("./auth");
 const tool = require('./tool')
+const routesBooking = require("./Booking/routesBooking")
 
 router.use("/", auth);
 router.use("/", routeRole);
@@ -16,6 +17,7 @@ router.use("/", routeSpecialist);
 router.use("/", routesHospital);
 router.use("/", routesEmployee);
 router.use("/", routesSevice);
+router.use("/", routesBooking);
 router.use("/", tool);
 
 

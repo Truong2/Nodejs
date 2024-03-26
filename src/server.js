@@ -7,10 +7,10 @@ const morgan = require('morgan')
 
 require("dotenv").config();
 
-var corsOptions = {
-  origin: 'http://example.com',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}
+// var corsOptions = {
+//   origin: 'http://example.com',
+//   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+// }
 
 const app = express();
 const port = process.env.APP_PORT;

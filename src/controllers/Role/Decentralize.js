@@ -59,6 +59,7 @@ const query_decentralize = async (req) => {
 
   return { list_decentralize, page, pageSize, total }
 }
+
 exports.createRole = async (req, res) => {
   try {
     let {

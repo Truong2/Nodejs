@@ -6,16 +6,16 @@ const roleUserShema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    role_name: {
+    roleName: {
         type: String,
         required: true
     },
-    role_code: {
+    roleCode: {
         type: String,
         required: true
 
     },
-    type_account: {
+    typeAccount: {
         type: Number,
         require: true
     },
@@ -23,7 +23,7 @@ const roleUserShema = new mongoose.Schema({
         type: Number,
         default: new Date().getTime()
     },
-    role_parent: {
+    roleParent: {
         type: Number,
         default: null
     }

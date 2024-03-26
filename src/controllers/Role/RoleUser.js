@@ -20,17 +20,17 @@ exports.createRoleUser = async (req, res) => {
       code
     } = req.body;
 
-    if (!role_name || !code || !type_account) {
+    if (!role_name || !code || isNaN(type_account)) {
       return res.status(400).json({ message: "Bad request", statusCode: 400 })
     }
     const maxID_roleUser = await functions.maxID(RoleUser)
 
     const new_roleUser = new RoleUser({
       _id: maxID_roleUser + 1,
-      role_name: (role_name),
-      type_account: type_account,
-      role_code: code,
-      role_parent: role_parent || null
+      roleName: (role_name),
+      typeAccount: type_account,
+      roleCode: code,
+      roleParent: role_parent || null
     })
     await new_roleUser.save()
     return res.status(200).json({ message: "Add role user sucess", statusCode: 200 })
@@ -95,13 +95,26 @@ exports.deleteRoleUser = async (req, res) => {
 exports.getListRoleUser = async (req, res) => {
   try {
     let { name } = req.query || null;
-    let data = await RoleUser.aggregate([
+    const user_login = req.user.data;
+    const condition = {}
+    if (user_login.accountType == 1) {
+      condition.typeAccount = 1
+    } else if (accountType == 3) {
+      condition = {
+        $or: [
+          { typeAccount: 1 },
+          { typeAccount: 3 },
+        ]
+      }
+    }
 
+    let data = await RoleUser.aggregate([
       {
         $match: {
           $and: [
-            { role_parent: null },
-            { role_name: { $regex: new RegExp(name, "i") } }
+            { roleParent: null },
+            { roleName: { $regex: new RegExp(name, "i") } },
+            condition
           ]
         }
       },
@@ -110,7 +123,7 @@ exports.getListRoleUser = async (req, res) => {
         {
           from: 'roleusers',
           localField: "_id",
-          foreignField: 'role_parent',
+          foreignField: 'roleParent',
           as: "role_child"
         }
       },
@@ -118,10 +131,10 @@ exports.getListRoleUser = async (req, res) => {
       {
         $group: {
           _id: '$_id',
-          name: { $first: '$role_name' },
-          role_child: { $addToSet: "$role_child" },
-          code: { $first: '$role_code' },
-          role_parent: { $first: '$role_parent' },
+          name: { $first: '$roleName' },
+          roleChild: { $addToSet: "$role_child" },
+          code: { $first: '$roleCode' },
+          role_parent: { $first: '$roleParent' },
         }
       },
       {

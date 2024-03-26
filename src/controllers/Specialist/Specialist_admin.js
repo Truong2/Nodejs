@@ -89,12 +89,12 @@ exports.deleteSpecialist = async (req, res) => {
 
 exports.getListSpecialist = async (req, res) => {
   try {
-    const { data } = req.user;
+    // const { data } = req.user;
     const { name } = req.query;
 
-    if (data.accountType != 0 && data.accountType != 3) {
-      return res.status(400).json({ message: "function is not valid", statusCode: 400 });
-    }
+    // if (data.accountType != 0 && data.accountType != 3) {
+    //   return res.status(400).json({ message: "function is not valid", statusCode: 400 });
+    // }
     const regexName = new RegExp(name || "", "i");
 
     const list_specialist = await Specialist.find({
