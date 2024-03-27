@@ -4,6 +4,7 @@ const Service = new mongoose.Schema({
         type: Number,
         require: true,
     },
+
     serviceName: {
         type: String,
         require: true
@@ -11,6 +12,9 @@ const Service = new mongoose.Schema({
     serviceCost: {
         type: Number
     },
+    calendarWorking: [{
+        type: Number,
+    }],
     service_userUsed: {//số người sử dụng
         type: Number,
         default: 0

@@ -1,4 +1,5 @@
 const TypeService = require('../../models/TypeService')
+const TimeWorking = require("../../models/TimeWorking")
 const Service = require('../../models/Service')
 const User = require('../../models/Users')
 const func = require('../../services/function')
@@ -66,6 +67,20 @@ const query_list_service = async (req, hospital_id) => {
       }
     },
     {
+      $lookup: {
+        from: 'timeworkings',
+        localField: "calendarWorking",
+        foreignField: "_id",
+        as: "TimeWorking"
+      }
+    },
+    {
+      $unwind: {
+        path: "$TimeWorking",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
       $group: {
         _id: "$_id",
         name: { $first: "$serviceName" },
@@ -74,7 +89,8 @@ const query_list_service = async (req, hospital_id) => {
         hospital: { $first: "$Hospital.name" },
         specialist: { $addToSet: "$Specialist.Specialist_Name" },
         serviceType: { $addToSet: "$SeviceType.serviceName" },
-        status: { $first: "$status" }
+        status: { $first: "$status" },
+        timeWorking: { $addToSet: "$TimeWorking.time_working" }
       }
     },
     {
@@ -90,7 +106,16 @@ const query_list_service = async (req, hospital_id) => {
 }
 
 exports.add_service_service = async (req, res) => {
-  const { serviceName, serviceCost, SpecialistId, type_service } = req.body;
+  const { serviceName,
+    serviceCost,
+    SpecialistId,
+    type_service,
+    time_working } = req.body;
+
+  const check_time_working = await TimeWorking.find({ _id: { $in: time_working.map(Number) } })
+  if (check_time_working.length !== time_working.length) {
+    return res.status(StatusCodes.PRECONDITION_FAILED).json({ message: "time working is not valid", statusCode: StatusCodes.PRECONDITION_FAILED })
+  }
 
   const hospital_id = Number(req.params.hospital_id);
   const check_exists_hos = await User.exists({ _id: hospital_id, type: 3 })
@@ -141,6 +166,7 @@ exports.add_service_service = async (req, res) => {
     HosId: hos_id,
     SpecialistId: SpecialistId,
     type_service: type_service,
+    calendarWorking: time_working
   })
 
   await new_service.save()
@@ -163,13 +189,18 @@ exports.add_service_service = async (req, res) => {
 }
 
 exports.update_service_service = async (req, res) => {
-  const { serviceCost, serviceName, SpecialistId, type_service } = req.body;
+  const { serviceCost, serviceName, SpecialistId, type_service, time_working } = req.body;
 
   const hospital_id = Number(req.params.hospital_id);
   const service_id = Number(req.params.service_id);
   const user_login = req.user.data;
 
   const hos_id = hospital_id;
+
+  const check_time_working = await TimeWorking.find({ _id: { $in: time_working.map(Number) } })
+  if (check_time_working.length !== time_working.length) {
+    return res.status(StatusCodes.PRECONDITION_FAILED).json({ message: "time working is not valid", statusCode: StatusCodes.PRECONDITION_FAILED })
+  }
 
   const check_exists_hos = await User.exists({ _id: hospital_id, type: 3 })
   if (!check_exists_hos) {
@@ -218,6 +249,7 @@ exports.update_service_service = async (req, res) => {
       serviceCost: serviceCost,
       SpecialistId: SpecialistId,
       type_service: type_service,
+      time_working: time_working,
     })
       .then(async () => {
         const { list_service, pageNum, pageSize, total } = await query_list_service(req, hospital_id);
@@ -293,6 +325,20 @@ exports.detail_service_service = async (req, res) => {
       }
     },
     {
+      $lookup: {
+        from: 'timeworkings',
+        localField: "calendarWorking",
+        foreignField: "_id",
+        as: "TimeWorking"
+      }
+    },
+    {
+      $unwind: {
+        path: "$TimeWorking",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
       $group: {
         _id: "$_id",
         name: { $first: "$serviceName" },
@@ -301,7 +347,8 @@ exports.detail_service_service = async (req, res) => {
         hospital: { $first: "$User.hospitalName" },
         specialist: { $first: "$Specialist.id" },
         serviceType: { $addToSet: "$SeviceType.serviceName" },
-        status: { $first: "$status" }
+        status: { $first: "$status" },
+        timeWorking: { $addToSet: "$TimeWorking.time_working" }
       }
     },
     {
