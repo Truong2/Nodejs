@@ -27,6 +27,9 @@ const Calendar = new mongoose.Schema({
     reason: {
         type: String
     },
+    day: {
+        type: Number// second
+    },
     serviceId: {
         type: Number
     },
@@ -40,9 +43,9 @@ const Calendar = new mongoose.Schema({
         type: Number
     },
     timeAccept: {
-        type: Date
+        type: Number
     },
-    creatAt: {
+    createAt: {
         type: Number// second
     },
     status: {

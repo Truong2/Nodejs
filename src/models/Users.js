@@ -69,7 +69,7 @@ const User_schema = new mongoose.Schema({
     type: Number
   },
   createAt: {
-    type: Number
+    type: Number //second
   },
   status: {
     type: Number,

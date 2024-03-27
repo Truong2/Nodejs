@@ -1,4 +1,11 @@
 
+const STATUS_BOOKING = {
+  'PENDING': 0,
+  'ACCEPT': 1,
+  'REFURSE': 2,
+  'CANCEL':3
+};
 
-export const FORMAT_SEACH = ""
-export const PATH_AVATAR = ''
+module.exports = { STATUS_BOOKING, };
+
+

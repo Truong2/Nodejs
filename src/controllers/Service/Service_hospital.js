@@ -142,6 +142,7 @@ exports.add_service_service = async (req, res) => {
     SpecialistId: SpecialistId,
     type_service: type_service,
   })
+
   await new_service.save()
     .then(async () => {
       const { list_service, pageNum, pageSize, total } = await query_list_service(req, hospital_id);
@@ -154,7 +155,7 @@ exports.add_service_service = async (req, res) => {
           totalElement: total,
           total_page: parseInt(list_service?.length / pageSize + 1),
         },
-        message: "Đăng kí dịch vụ thành công.",
+        message: "Tạo dịch vụ thành công.",
         statusCode: 200
       })
     })

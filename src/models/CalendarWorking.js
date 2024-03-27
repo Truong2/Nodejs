@@ -13,7 +13,7 @@ const CalendarWorking = new mongoose.Schema({
         required: true
     },
     date: {
-        type: Number,//dvi sencond
+        type: Number,//mili sencond
         required: true
     },
     time_working: [{

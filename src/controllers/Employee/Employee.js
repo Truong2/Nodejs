@@ -74,14 +74,13 @@ exports.create_calendar_working_serviece = async (req, res) => {
   if (isNaN(date) || date <= 0) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "date is not valid ", statusCode: StatusCodes.BAD_REQUEST })
   }
-  //2024-01-11T21:44:17.597Z
 
   const check_time_working = await TimeWorking.find({ _id: { $in: time_working.map(Number) } })
   if (check_time_working.length !== time_working.length) {
     return res.status(StatusCodes.PRECONDITION_FAILED).json({ message: "time working is not valid", statusCode: StatusCodes.PRECONDITION_FAILED })
   }
 
-  const time = dayjs(new Date(date)).startOf('D').unix() * 1000;
+  const time = dayjs(new Date(date * 1000)).startOf('D').unix();
   const old_schedule = await CalendarWorking.findOne({
     userId: user_login._id,
     hospitalId: user_login.hospitalId,
@@ -125,7 +124,7 @@ exports.create_calendar_working_serviece = async (req, res) => {
   }
 }
 
-exports.get_list_calendar_working_serviece = async (req, res) => {
+const query_calenda_working = async (req) => {
   const time = req.params.time;
   const doctor_id = parseInt(req.params.doctor_id)
   const filter_time = dayjs(new Date(time * 1000)).startOf('D').unix();
@@ -140,7 +139,7 @@ exports.get_list_calendar_working_serviece = async (req, res) => {
     {
       $match: {
         $and: [
-          { date: { $gte: filter_time * 1000 } },
+          { date: { $gte: filter_time } },
           { userId: doctor._id },
           { hospitalId: doctor.hospitalId }
         ]
@@ -176,6 +175,11 @@ exports.get_list_calendar_working_serviece = async (req, res) => {
     }
   ]
   )
+  return list_calendar
+}
+
+exports.get_list_calendar_working_serviece = async (req, res) => {
+  const list_calendar = await query_calenda_working(req)
 
   return res.status(StatusCodes.OK)
     .json({

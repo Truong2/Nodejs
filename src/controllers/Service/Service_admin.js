@@ -274,10 +274,18 @@ exports.get_list_service_by_type_service = async (req, res) => {
   const typeService_id = Number(req.query.typeService_id);
   const specialist = Number(req.query.specialist);
 
-  if (!typeService_id && !specialist) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
-  }
+  // if (!typeService_id && !specialist) {
+  //   return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad request !", statusCode: StatusCodes.BAD_REQUEST })
+  // }
+  const condition1 = {}
 
+  if (typeService_id) {
+    condition1.type_service = { $in: [typeService_id] }
+  }
+  const condition2 = {}
+  if (specialist) {
+    condition2.SpecialistId = { $in: [specialist] }
+  }
   const list_service = await Service.aggregate([
     {
       $match: {
@@ -285,8 +293,8 @@ exports.get_list_service_by_type_service = async (req, res) => {
           { serviceName: { $regex: serviceName } },
           {
             $or: [
-              { SpecialistId: { $in: [specialist] } },
-              { type_service: { $in: [typeService_id] } }
+              condition1,
+              condition2
             ]
           }
         ]
@@ -364,7 +372,6 @@ exports.get_list_service_by_type_service = async (req, res) => {
     ]
 
   }).count()
-  console.log("check");
 
   return res.status(StatusCodes.OK).json({
     data: {
